@@ -6,7 +6,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=smartdns
 PKG_VERSION:=47
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/pymumu/smartdns/tar.gz/Release$(PKG_VERSION)?
@@ -24,19 +24,34 @@ include $(INCLUDE_DIR)/package.mk
 MAKE_PATH:=src
 MAKE_VARS+= VER=$(PKG_VERSION)
 
-define Package/smartdns
+define Package/smartdns/Default
   SECTION:=net
   CATEGORY:=Network
-  TITLE:=smartdns server
   SUBMENU:=IP Addresses and Names
-  DEPENDS:=+i386:libatomic +libpthread +libopenssl
+  TITLE:=smartdns
   URL:=https://www.github.com/pymumu/smartdns/
+endef
+
+define Package/smartdns
+  $(call Package/smartdns/Default)
+  TITLE+= server
+  DEPENDS:=+i386:libatomic +libpthread +libopenssl +libatomic
 endef
 
 define Package/smartdns/description
 SmartDNS is a local DNS server which accepts DNS query requests from local network clients,
 gets DNS query results from multiple upstream DNS servers concurrently, and returns the fastest IP to clients.
 Unlike dnsmasq's all-servers, smartdns returns the fastest IP, and encrypt DNS queries with DoT or DoH.
+endef
+
+define Package/smartdns-ui
+  $(call Package/smartdns/Default)
+  TITLE+= dashboard
+  DEPENDS:=+smartdns
+endef
+
+define Package/smartdns-ui/description
+A dashboard ui for smartdns server.
 endef
 
 define Package/smartdns/conffiles
@@ -62,4 +77,12 @@ define Package/smartdns/install
 	$(INSTALL_CONF) $(CURDIR)/conf/smartdns.conf $(1)/etc/config/smartdns
 endef
 
+define Package/smartdns-ui/install
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(INSTALL_DIR) $(1)/usr/share/smartdns
+	$(CP) $(CURDIR)/ui-aarch64/usr/lib/smartdns/smartdns_ui.so $(1)/usr/lib/smartdns_ui.so
+	$(CP) $(CURDIR)/ui-aarch64/usr/share/smartdns/wwwroot $(1)/usr/share/smartdns/wwwroot
+endef
+
 $(eval $(call BuildPackage,smartdns))
+$(eval $(call BuildPackage,smartdns-ui))

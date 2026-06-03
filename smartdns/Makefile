@@ -5,7 +5,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=smartdns
-PKG_VERSION:=48
+PKG_VERSION:=48.0.12
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -68,21 +68,24 @@ define Package/smartdns/install
 	$(INSTALL_DIR) $(1)/usr/sbin $(1)/etc/config $(1)/etc/init.d
 	$(INSTALL_DIR) $(1)/etc/smartdns $(1)/etc/smartdns/domain-set $(1)/etc/smartdns/conf.d/
 	$(INSTALL_DIR) $(1)/etc/smartdns/ip-set $(1)/etc/smartdns/download
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/smartdns $(1)/usr/sbin/smartdns
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/package/openwrt/files/etc/init.d/smartdns $(1)/etc/init.d/smartdns
-	$(INSTALL_CONF) $(PKG_BUILD_DIR)/package/openwrt/address.conf $(1)/etc/smartdns/address.conf
-	$(INSTALL_CONF) $(PKG_BUILD_DIR)/package/openwrt/blacklist-ip.conf $(1)/etc/smartdns/blacklist-ip.conf
-	$(INSTALL_CONF) $(PKG_BUILD_DIR)/package/openwrt/domain-block.list $(1)/etc/smartdns/domain-block.list
-	$(INSTALL_CONF) $(PKG_BUILD_DIR)/package/openwrt/domain-forwarding.list $(1)/etc/smartdns/domain-forwarding.list
-	$(INSTALL_CONF) $(CURDIR)/conf/custom.conf $(1)/etc/smartdns/custom.conf
-	$(INSTALL_CONF) $(CURDIR)/conf/smartdns.conf $(1)/etc/config/smartdns
+	$(INSTALL_BIN) $(CURDIR)/usr/sbin/smartdns $(1)/usr/sbin/smartdns
+	$(INSTALL_BIN) $(CURDIR)/etc/init.d/smartdns $(1)/etc/init.d/smartdns
+	$(INSTALL_CONF) $(CURDIR)/etc/smartdns/address.conf $(1)/etc/smartdns/address.conf
+	$(INSTALL_CONF) $(CURDIR)/etc/smartdns/blacklist-ip.conf $(1)/etc/smartdns/blacklist-ip.conf
+	$(INSTALL_CONF) $(CURDIR)/etc/smartdns/domain-block.list $(1)/etc/smartdns/domain-block.list
+	$(INSTALL_CONF) $(CURDIR)/etc/smartdns/domain-forwarding.list $(1)/etc/smartdns/domain-forwarding.list
+	$(INSTALL_CONF) $(CURDIR)/etc/smartdns/custom.conf $(1)/etc/smartdns/custom.conf
+	$(INSTALL_CONF) $(CURDIR)/etc/config/smartdns $(1)/etc/config/smartdns
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(INSTALL_DATA) $(CURDIR)/usr/lib/smartdns/libcrypto.so.3 $(1)/usr/lib/
+	$(INSTALL_DATA) $(CURDIR)/usr/lib/smartdns/libssl.so.3 $(1)/usr/lib/
 endef
 
 define Package/smartdns-ui/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(INSTALL_DIR) $(1)/usr/share/smartdns
-	$(CP) $(CURDIR)/ui-aarch64/usr/lib/smartdns/smartdns_ui.so $(1)/usr/lib/smartdns_ui.so
-	$(CP) $(CURDIR)/ui-aarch64/usr/share/smartdns/wwwroot $(1)/usr/share/smartdns/wwwroot
+	$(INSTALL_DATA) $(CURDIR)/usr/lib/smartdns_ui.so $(1)/usr/lib/
+	$(CP) $(CURDIR)/usr/share/smartdns/wwwroot $(1)/usr/share/smartdns/
 endef
 
 $(eval $(call BuildPackage,smartdns))

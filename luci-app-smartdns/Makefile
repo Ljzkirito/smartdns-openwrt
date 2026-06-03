@@ -15,6 +15,7 @@ PKG_ARCH:=all
 LUCI_TITLE:=LuCI for smartdns
 LUCI_DESCRIPTION:=Provides Luci for smartdns
 LUCI_DEPENDS:=+smartdns
+LUCI_ACL:=luci-app-smartdns
 
 PKG_CONFIG_DEPENDS:=CONFIG_PACKAGE_luci-app-smartdns_INCLUDE_WebUI
 

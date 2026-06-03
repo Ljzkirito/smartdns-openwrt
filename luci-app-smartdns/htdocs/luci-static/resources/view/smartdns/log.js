@@ -45,23 +45,6 @@ return view.extend({
 				overflow-y: auto;
 				max-height: 650px;
 			}
-			#.description {
-				background-color: #33ccff;
-			}
-			.cbi-button-danger {
-				background-color: #fff;
-				color: #f00;
-				border: 1px solid #f00;
-				border-radius: 4px;
-				padding: 4px 8px;
-				font-size: 14px;
-				cursor: pointer;
-				margin-top: 10px;
-			}
-			.cbi-button-danger:hover {
-				background-color: #f00;
-				color: #fff;
-			}
 			.cbi-section small {
 				margin-left: 10px;
 			}
@@ -71,18 +54,22 @@ return view.extend({
 			.cbi-section .cbi-section-actions-right {
 				text-align: right;
 			}
+			.log-buttons {
+				margin-bottom: 10px;
+			}
 		`;
 
-
-		var log_textarea = E('div', { 'id': 'log_textarea' },
+		var log_textarea = E('div', { 'id': 'log_textarea' }, [
 			E('img', {
-				'src': L.resource('icons/loading.svg'),
+				'src': L.resource(['icons/loading.gif', 'icons/loading.svg']),
 				'alt': _('Loading...'),
 				'style': 'vertical-align:middle'
-			}, _('Collecting data ...'))
-		);
+			}),
+			' ',
+			_('Collecting data ...')
+		]);
 
-		var clear_log_button = E('th', {}, [
+		var clear_log_button = E('div', { 'style': 'display:inline-block; margin-right:10px' }, [
 			E('button', {
 				'class': 'cbi-button cbi-button-remove',
 				'click': function (ev) {
@@ -97,8 +84,7 @@ return view.extend({
 								button.disabled = false;
 								button.textContent = _('Clear Logs');
 							}, 5000);
-							// Immediately refresh log display box
-							var log = E('pre', { 'wrap': 'pre' }, [_('Log is clean.')]);
+							var log = E('pre', {}, [_('Log is clean.')]);
 							dom.content(log_textarea, log);
 						})
 						.catch(function () {
@@ -112,28 +98,7 @@ return view.extend({
 			}, _('Clear Logs'))
 		]);
 
-
-		poll.add(L.bind(function () {
-			return fs.exec('/usr/libexec/smartdns-call', ['tail'])
-				.then(function (res) {
-					var log = E('pre', { 'wrap': 'pre' }, [res.stdout.trim() || _('Log is clean.')]);
-
-					dom.content(log_textarea, log);
-					log.scrollTop = log.scrollHeight;
-				}).catch(function (err) {
-					var log;
-
-					if (err.toString().includes('NotFoundError')) {
-						log = E('pre', { 'wrap': 'pre' }, [_('Log file does not exist.')]);
-					} else {
-						log = E('pre', { 'wrap': 'pre' }, [_('Unknown error: %s').format(err)]);
-					}
-
-					dom.content(log_textarea, log);
-				});
-		}));
-
-		var back_smartdns_button = E('th', {}, [
+		var back_smartdns_button = E('div', { 'style': 'display:inline-block' }, [
 			E('button', {
 				'class': 'cbi-button cbi-button-apply',
 				'click': ui.createHandlerFn(this, function () {
@@ -142,11 +107,30 @@ return view.extend({
 			}, _('Back SmartDNS'))
 		]);
 
+		poll.add(L.bind(function () {
+			return fs.exec('/usr/libexec/smartdns-call', ['tail'])
+				.then(function (res) {
+					var log = E('pre', {}, [res.stdout.trim() || _('Log is clean.')]);
+					dom.content(log_textarea, log);
+					log.scrollTop = log.scrollHeight;
+				}).catch(function (err) {
+					var log;
+					if (err.toString().includes('NotFoundError')) {
+						log = E('pre', {}, [_('Log file does not exist.')]);
+					} else {
+						log = E('pre', {}, [_('Unknown error: %s').format(err)]);
+					}
+					dom.content(log_textarea, log);
+				});
+		}));
+
 		return E('div', { 'class': 'cbi-map' }, [
 			E('style', [css]),
 			E('div', { 'class': 'cbi-section' }, [
-				clear_log_button,
-				back_smartdns_button,
+				E('div', { 'class': 'log-buttons' }, [
+					clear_log_button,
+					back_smartdns_button
+				]),
 				log_textarea,
 				E('small', {}, _('Refresh every %s seconds.').format(L.env.pollinterval)),
 				E('div', { 'class': 'cbi-section-actions cbi-section-actions-right' })

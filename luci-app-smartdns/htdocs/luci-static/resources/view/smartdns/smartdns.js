@@ -16,7 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 'use strict';
 'require fs';
 'require uci';
@@ -58,7 +57,6 @@ function smartdnsRenderStatus(isRunning) {
 	const autoSetDnsmasq = uci.get_first('smartdns', 'smartdns', 'auto_set_dnsmasq');
 	const smartdnsPort = uci.get_first('smartdns', 'smartdns', 'port');
 	const smartdnsEnable = uci.get_first('smartdns', 'smartdns', 'enabled');
-	const dnsmasqServer = uci.get_first('dhcp', 'dnsmasq', 'server');
 
 	const uiEnable = uci.get_first('smartdns', 'smartdns', 'ui') || "0";
 	const uiPort = uci.get_first('smartdns', 'smartdns', 'ui_port') || "6080";
@@ -84,11 +82,16 @@ function smartdnsRenderStatus(isRunning) {
 	if (autoSetDnsmasq === '1' && smartdnsPort != '53') {
 		const matchLine = "127.0.0.1#" + smartdnsPort;
 
-		uci.unload('dhcp');
-		uci.load('dhcp');
-		if (dnsmasqServer == undefined || dnsmasqServer.indexOf(matchLine) < 0) {
-			renderHTML += "<br /><span style=\"color:red;font-weight:bold\">" + _("Dnsmasq Forwarded To Smartdns Failure") + "</span>";
-		}
+		// 修复：等待UCI加载完成再判断
+		return uci.unload('dhcp')
+			.then(() => uci.load('dhcp'))
+			.then(() => {
+				const dnsmasqServer = uci.get_first('dhcp', 'dnsmasq', 'server');
+				if (dnsmasqServer == undefined || dnsmasqServer.indexOf(matchLine) < 0) {
+					renderHTML += "<br /><span style=\"color:red;font-weight:bold\">" + _("Dnsmasq Forwarded To Smartdns Failure") + "</span>";
+				}
+				return renderHTML;
+			});
 	}
 
 	return renderHTML;
@@ -102,6 +105,17 @@ function isSmartdnsUiAvailable() {
 	});
 }
 
+// 21.02兼容：文件上传通用处理函数
+function handleFileUpload(targetDir) {
+	return function(section_id, formvalue) {
+		if (!formvalue) return;
+		return fs.exec('/bin/mv', ['/tmp/' + formvalue, targetDir + '/' + formvalue])
+			.catch(function(e) {
+				ui.addNotification(null, E('p', _('Failed to upload file: %s').format(e.message)), 'error');
+			});
+	};
+}
+
 return view.extend({
 	load() {
 		return Promise.all([
@@ -112,9 +126,8 @@ return view.extend({
 	},
 	render(stats) {
 		let m, s, o;
-		let ss, so;
 		let servers, download_files;
-		let hasUi = stats[2];
+		const hasUi = stats[2];
 
 		m = new form.Map('smartdns', _('SmartDNS'));
 		m.title = _("SmartDNS Server");
@@ -131,7 +144,10 @@ return view.extend({
 						return;
 					}
 
-					view.innerHTML = smartdnsRenderStatus(res);
+					// 处理异步返回的HTML
+					Promise.resolve(smartdnsRenderStatus(res)).then(function(html) {
+						view.innerHTML = html;
+					});
 				});
 			}
 
@@ -687,25 +703,26 @@ return view.extend({
 		o.default = '5';
 		o.depends('enable_auto_update', '1');
 
+		// 修复：21.02兼容文件上传
 		o = s.taboption("files", form.FileUpload, "upload_conf_file", _("Upload Config File"),
 			_("Upload smartdns config file to /etc/smartdns/conf.d"));
-		o.rmempty = true
-		o.datatype = "file"
-		o.rempty = true
-		o.root_directory = "/etc/smartdns/conf.d"
+		o.rmempty = true;
+		o.datatype = "file";
+		o.rempty = true;
+		o.write = handleFileUpload("/etc/smartdns/conf.d");
 
 		o = s.taboption("files", form.FileUpload, "upload_list_file", _("Upload Domain List File"),
 			_("Upload domain list file to /etc/smartdns/domain-set"));
-		o.rmempty = true
-		o.datatype = "file"
-		o.rempty = true
-		o.root_directory = "/etc/smartdns/domain-set"
+		o.rmempty = true;
+		o.datatype = "file";
+		o.rempty = true;
+		o.write = handleFileUpload("/etc/smartdns/domain-set");
 
 		o = s.taboption("files", form.FileUpload, "upload_other_file", _("Upload File"));
-		o.rmempty = true
-		o.datatype = "file"
-		o.rempty = true
-		o.root_directory = "/etc/smartdns/download"
+		o.rmempty = true;
+		o.datatype = "file";
+		o.rempty = true;
+		o.write = handleFileUpload("/etc/smartdns/download");
 
 		o = s.taboption('files', form.DummyValue, "_update", _("Update Files"));
 		o.renderWidget = function () {
@@ -722,13 +739,13 @@ return view.extend({
 		o = s.taboption('files', form.SectionValue, '__files__', form.GridSection, 'download-file', _('Download Files'),
 			_('List of files to download.'));
 
-		ss = o.subsection;
+		const ss = o.subsection;
 
 		ss.addremove = true;
 		ss.anonymous = true;
 		ss.sortable = true;
 
-		so = ss.option(form.Value, 'name', _('File Name'), _('File Name'));
+		let so = ss.option(form.Value, 'name', _('File Name'), _('File Name'));
 		so.rmempty = true;
 		so.datatype = 'file';
 
@@ -842,7 +859,8 @@ return view.extend({
 				})
 			}, [_("View Log")]);
 		}
-		const log_levels = ["debug", "info", "notice", "warn", "error", "fatal"];
+		// 修复：包含log_level默认值
+		const log_levels = ["", "debug", "info", "notice", "warn", "error", "fatal"];
 		log_levels.forEach(function(level) {
 			o.depends({ log_output_mode: "file", log_level: level });
 		});
@@ -1102,13 +1120,14 @@ return view.extend({
 			return _("Client address format error, please input ip adress or mac address.");
 		}
 
+		// 修复：21.02兼容文件上传
 		o = s.taboption("basic", form.FileUpload, "client_addr_file", _("Client Address File"),
 			_("Upload client address file, same as Client Address function."));
-		o.rmempty = true
-		o.datatype = "file"
-		o.rempty = true
+		o.rmempty = true;
+		o.datatype = "file";
+		o.rempty = true;
 		o.modalonly = true;
-		o.root_directory = "/etc/smartdns/ip-set"
+		o.write = handleFileUpload("/etc/smartdns/ip-set");
 
 		o = s.taboption("basic", form.Value, "server_group", _("Server Group"), _("DNS Server group belongs to, such as office, home."))
 		o.rmempty = true
@@ -1257,12 +1276,13 @@ return view.extend({
 			o.value(df.name);
 		}
 
+		// 修复：21.02兼容文件上传
 		o = s.taboption("block", form.FileUpload, "block_domain_set_file", _("Domain List File"), _("Upload domain list file."));
-		o.rmempty = true
-		o.datatype = "file"
-		o.rempty = true
-		o.editable = true
-		o.root_directory = "/etc/smartdns/domain-set"
+		o.rmempty = true;
+		o.datatype = "file";
+		o.rempty = true;
+		o.editable = true;
+		o.write = handleFileUpload("/etc/smartdns/domain-set");
 
 
 		////////////////
@@ -1414,13 +1434,14 @@ return view.extend({
 		o.rempty = true
 		o.modalonly = true;
 
+		// 修复：21.02兼容文件上传
 		o = s.taboption("forwarding", form.FileUpload, "forwarding_domain_set_file", _("Domain List File"),
 			_("Upload domain list file, or configure auto download from Download File Setting page."));
-		o.rmempty = true
-		o.datatype = "file"
-		o.rempty = true
-		o.editable = true
-		o.root_directory = "/etc/smartdns/domain-set"
+		o.rmempty = true;
+		o.datatype = "file";
+		o.rempty = true;
+		o.editable = true;
+		o.write = handleFileUpload("/etc/smartdns/domain-set");
 
 		o = s.taboption("forwarding", form.TextValue, "domain_forwarding_list",
 			_("Domain List"), _("Configure forwarding domain name list."));
@@ -1444,12 +1465,13 @@ return view.extend({
 		///////////////////////////////////////
 		// domain block;
 		///////////////////////////////////////
+		// 修复：21.02兼容文件上传
 		o = s.taboption("block", form.FileUpload, "block_domain_set_file", _("Domain List File"), _("Upload domain list file."));
-		o.rmempty = true
-		o.datatype = "file"
-		o.rempty = true
-		o.editable = true
-		o.root_directory = "/etc/smartdns/domain-set"
+		o.rmempty = true;
+		o.datatype = "file";
+		o.rempty = true;
+		o.editable = true;
+		o.write = handleFileUpload("/etc/smartdns/domain-set");
 
 		o = s.taboption("block", form.TextValue, "domain_block_list",
 			_("Domain List"), _("Configure block domain list."));
@@ -1475,22 +1497,22 @@ return view.extend({
 		o = s.taboption('domain-rule-list', form.SectionValue, '__domain-rule-list__', form.GridSection, 'domain-rule-list', _('Domain Rule List'),
 			_('Configure domain rule list.'));
 
-		ss = o.subsection;
+		const ss2 = o.subsection;
 
-		ss.addremove = true;
-		ss.anonymous = true;
-		ss.sortable = true;
+		ss2.addremove = true;
+		ss2.anonymous = true;
+		ss2.sortable = true;
 
 		// enable flag;
-		so = ss.option(form.Flag, "enabled", _("Enable"), _("Enable"));
+		so = ss2.option(form.Flag, "enabled", _("Enable"), _("Enable"));
 		so.rmempty = false;
 		so.default = so.enabled;
 		so.editable = true;
 
 		// name;
-		so = ss.option(form.Value, "name", _("Domain Rule Name"), _("Domain Rule Name"));
+		so = ss2.option(form.Value, "name", _("Domain Rule Name"), _("Domain Rule Name"));
 
-		so = ss.option(form.Value, "server_group", _("Server Group"), _("DNS Server group belongs to, such as office, home."))
+		so = ss2.option(form.Value, "server_group", _("Server Group"), _("DNS Server group belongs to, such as office, home."))
 		so.rmempty = true
 		so.placeholder = "default"
 		so.datatype = "hostname"
@@ -1514,14 +1536,16 @@ return view.extend({
 
 		}
 
-		so = ss.option(form.FileUpload, "domain_list_file", _("Domain List File"),
+		// 修复：21.02兼容文件上传
+		so = ss2.option(form.FileUpload, "domain_list_file", _("Domain List File"),
 			_("Upload domain list file, or configure auto download from Download File Setting page."));
-		so.rmempty = true
-		so.datatype = "file"
-		so.rempty = true
-		so.root_directory = "/etc/smartdns/domain-set"
+		so.rmempty = true;
+		so.datatype = "file";
+		so.rempty = true;
+		so.root_directory = "/etc/smartdns/domain-set";
+		so.write = handleFileUpload("/etc/smartdns/domain-set");
 
-		so = ss.option(form.ListValue, "block_domain_type", _("Block domain"), _("Block domain."));
+		so = ss2.option(form.ListValue, "block_domain_type", _("Block domain"), _("Block domain."));
 		so.rmempty = true;
 		so.value("none", _("None"));
 		so.value("all", "IPv4/IPv6");
@@ -1530,7 +1554,7 @@ return view.extend({
 		so.modalonly = true;
 
 		// Support DualStack ip selection;
-		so = ss.option(form.ListValue, "dualstack_ip_selection", _("Dual-stack IP Selection"),
+		so = ss2.option(form.ListValue, "dualstack_ip_selection", _("Dual-stack IP Selection"),
 			_("Enable IP selection between IPv4 and IPv6"));
 		so.rmempty = true;
 		so.default = "default";
@@ -1539,7 +1563,7 @@ return view.extend({
 		so.value("yes", _("Yes"));
 		so.value("no", _("No"));
 
-		so = ss.option(form.Value, "speed_check_mode", _("Speed Check Mode"), _("Smartdns speed check mode."));
+		so = ss2.option(form.Value, "speed_check_mode", _("Speed Check Mode"), _("Smartdns speed check mode."));
 		so.rmempty = true;
 		so.placeholder = "default";
 		so.modalonly = true;
@@ -1590,19 +1614,19 @@ return view.extend({
 			return true;
 		}
 
-		so = ss.option(form.Flag, "force_aaaa_soa", _("Force AAAA SOA"), _("Force AAAA SOA."));
+		so = ss2.option(form.Flag, "force_aaaa_soa", _("Force AAAA SOA"), _("Force AAAA SOA."));
 		so.rmempty = true;
 		so.default = so.disabled;
 		so.modalonly = true;
 
 
-		so = ss.option(form.Value, "ipset_name", _("IPset Name"), _("IPset name."));
+		so = ss2.option(form.Value, "ipset_name", _("IPset Name"), _("IPset name."));
 		so.rmempty = true;
 		so.datatype = "hostname";
 		so.rempty = true;
 		so.modalonly = true;
 
-		so = ss.option(form.Value, "nftset_name", _("NFTset Name"), _("NFTset name, format: [#[4|6]:[family#table#set]]"));
+		so = ss2.option(form.Value, "nftset_name", _("NFTset Name"), _("NFTset name, format: [#[4|6]:[family#table#set]]"));
 		so.rmempty = true;
 		so.datatype = "string";
 		so.rempty = true;
@@ -1623,7 +1647,7 @@ return view.extend({
 		}
 
 		// other args
-		so = ss.option(form.Value, "addition_flag", _("Additional Rule Flag"),
+		so = ss2.option(form.Value, "addition_flag", _("Additional Rule Flag"),
 			_("Additional Flags for rules, read help on domain-rule for more information."))
 		so.default = ""
 		so.rempty = true
@@ -1666,61 +1690,62 @@ return view.extend({
 		o = s.taboption('ip-rule-list', form.SectionValue, '__ip-rule-list__', form.GridSection, 'ip-rule-list', _('IP Rule List'),
 			_('Configure ip rule list.'));
 
-		ss = o.subsection;
+		const ss3 = o.subsection;
 
-		ss.addremove = true;
-		ss.anonymous = true;
-		ss.sortable = true;
+		ss3.addremove = true;
+		ss3.anonymous = true;
+		ss3.sortable = true;
 
 		// enable flag;
-		so = ss.option(form.Flag, "enabled", _("Enable"), _("Enable"));
+		so = ss3.option(form.Flag, "enabled", _("Enable"), _("Enable"));
 		so.rmempty = false;
 		so.default = so.enabled;
 		so.editable = true;
 
 		// name;
-		so = ss.option(form.Value, "name", _("IP Rule Name"), _("IP Rule Name"));
+		so = ss3.option(form.Value, "name", _("IP Rule Name"), _("IP Rule Name"));
 		so.rmempty = true;
 		so.datatype = "string";
 
-		so = ss.option(form.FileUpload, "ip_set_file", _("IP Set File"), _("Upload IP set file."));
-		so.rmempty = true
-		so.datatype = "file"
+		// 修复：21.02兼容文件上传
+		so = ss3.option(form.FileUpload, "ip_set_file", _("IP Set File"), _("Upload IP set file."));
+		so.rmempty = true;
+		so.datatype = "file";
 		so.modalonly = true;
-		so.root_directory = "/etc/smartdns/ip-set"
+		so.write = handleFileUpload("/etc/smartdns/ip-set");
 
-		so = ss.option(form.DynamicList, "ip_addr", _("IP Addresses"), _("IP addresses, CIDR format."));
+		so = ss3.option(form.DynamicList, "ip_addr", _("IP Addresses"), _("IP addresses, CIDR format."));
 		so.rmempty = true;
 		so.datatype = "ipaddr"
 		so.modalonly = true;
 
-		so = ss.option(form.Flag, "whitelist_ip", _("Whitelist IP"), _("Whitelist IP Rule, Accept IP addresses within the range."));
+		so = ss3.option(form.Flag, "whitelist_ip", _("Whitelist IP"), _("Whitelist IP Rule, Accept IP addresses within the range."));
 		so.rmempty = true;
 		so.default = so.disabled;
 		so.modalonly = true;
 
-		so = ss.option(form.Flag, "blacklist_ip", _("Blacklist IP"), _("Blacklist IP Rule, Decline IP addresses within the range."));
+		so = ss3.option(form.Flag, "blacklist_ip", _("Blacklist IP"), _("Blacklist IP Rule, Decline IP addresses within the range."));
 		so.rmempty = true;
 		so.default = so.disabled;
 		so.modalonly = true;
 
-		so = ss.option(form.Flag, "ignore_ip", _("Ignore IP"), _("Do not use these IP addresses."));
+		so = ss3.option(form.Flag, "ignore_ip", _("Ignore IP"), _("Do not use these IP addresses."));
 		so.rmempty = true;
 		so.default = so.disabled;
 		so.modalonly = true;
 
-		so = ss.option(form.Flag, "bogus_nxdomain", _("Bogus nxdomain"), _("Return SOA when the requested result contains a specified IP address."));
+		so = ss3.option(form.Flag, "bogus_nxdomain", _("Bogus nxdomain"), _("Return SOA when the requested result contains a specified IP address."));
 		so.rmempty = true;
 		so.default = so.disabled;
 		so.modalonly = true;
 
-		so = ss.option(form.DynamicList, "ip_alias", _("IP alias"), _("IP Address Mapping, Can be used for CDN acceleration with Anycast IP, such as Cloudflare's CDN."));
+		so = ss3.option(form.DynamicList, "ip_alias", _("IP alias"), _("IP Address Mapping, Can be used for CDN acceleration with Anycast IP, such as Cloudflare's CDN."));
 		so.rmempty = true;
 		so.datatype = 'ipaddr("nomask")';
 		so.modalonly = true;
 
 		// other args
-		so = ss.option(form.Value, "addition_flag", _("Additional Rule Flag"),
+		so = ss3.option(form.Value, "addition_flag", _("Additional Rule Flag"),
 			_("Additional Flags for rules, read help on ip-rule for more information."))
 		so.default = ""
 		so.rempty = true

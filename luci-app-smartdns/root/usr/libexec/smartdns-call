@@ -3,22 +3,32 @@
 # Copyright 2018-2025 Nick Peng <zxlhhyccc@gmail.com>
 # Licensed to the public under the GPL V3 License.
 
-action=$1
+action="$1"
 shift
 
+# 获取日志文件路径，默认值与LuCI保持一致
 log_file="$(uci -q get smartdns.@smartdns[0].log_file)"
-list_file="${log_file:-/var/log/smartdns/smartdns.log}"
+log_file="${log_file:-/var/log/smartdns/smartdns.log}"
 
 case "$action" in
       tail)
-            if [ ! -e "$list_file" ]; then
+            # 先检查文件是否存在且是普通文件
+            if [ ! -f "$log_file" ]; then
                   echo "Log file does not exist."
+                  exit 0
             fi
-            # read log
-            tail -n 5000 "$list_file"
+            # 读取最后5000行日志
+            tail -n 5000 "$log_file"
             ;;
       clear_log)
-            # clear log
-            > $list_file
+            # 仅当文件存在时才清空
+            if [ -f "$log_file" ]; then
+                  > "$log_file"
+            fi
+            ;;
+      *)
+            # 处理无效action
+            echo "Invalid action: $action"
+            exit 1
             ;;
 esac

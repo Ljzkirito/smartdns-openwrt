@@ -1,25 +1,23 @@
 {
-	"luci-app-smartdns": {
-		"description": "Grant access to LuCI app smartdns",
-		"read": {
-			"cgi-io": [ "exec" ],
-			"file": {
-				"/etc/smartdns/*": [ "read" ],
-				"/usr/libexec/smartdns-call tail": [ "exec" ],
-				"/usr/libexec/smartdns-call clear_log": [ "exec" ]
-			},
-			"ubus": {
-				"service": [ "list" ]
-			},
-			"uci": [ "smartdns" ]
-		},
-		"write": {
-			"file": {
-				"/etc/smartdns/*": [ "write" ],
-				"/etc/init.d/smartdns restart": [ "exec" ],
-				"/etc/init.d/smartdns updatefiles": [ "exec" ]
-			},
-			"uci": [ "smartdns" ]
-		}
-	}
+    "luci-app-smartdns": {
+        "description": "Grant access to LuCI app smartdns",
+        "read": {
+            "cgi-io": [ "exec", "upload" ],
+            "file": {
+                "/etc/smartdns/**": [ "read" ],
+                "/usr/libexec/smartdns-call": [ "exec" ],
+                "/etc/init.d/smartdns": [ "exec" ]
+            },
+            "ubus": {
+                "service": [ "list" ]
+            },
+            "uci": [ "smartdns" ]
+        },
+        "write": {
+            "file": {
+                "/etc/smartdns/**": [ "write" ]
+            },
+            "uci": [ "smartdns" ]
+        }
+    }
 }

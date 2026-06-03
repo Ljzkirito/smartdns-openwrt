@@ -17,6 +17,7 @@ PKG_MAINTAINER:=Nick Peng <pymumu@gmail.com>
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_LICENSE_FILES:=LICENSE
 
+PKG_CONFIG_DEPENDS:=CONFIG_PACKAGE_smartdns-ui
 PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk

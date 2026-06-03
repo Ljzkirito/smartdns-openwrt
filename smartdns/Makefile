@@ -12,10 +12,10 @@ PKG_RELEASE:=1
 # 映射 OpenWrt 的 ARCH 到 ipk 文件名中的架构后缀
 ifeq ($(ARCH),aarch64)
   PKG_ARCH:=aarch64
-else ifeq ($(ARCH),arm)
-  PKG_ARCH:=armv7
 else ifeq ($(ARCH),x86_64)
   PKG_ARCH:=x86_64
+else ifeq ($(filter arm%,$(ARCH)),)
+  PKG_ARCH:=armv7
 else
   $(error Unsupported architecture: $(ARCH). PikuZheng prebuilt ipk only provides aarch64, armv7, x86_64)
 endif
@@ -41,7 +41,8 @@ endef
 define Package/smartdns
   $(call Package/smartdns/Default)
   TITLE+= server
-  DEPENDS:=+libc +libpthread +libopenssl
+  DEPENDS:=+libc +libpthread
+  # 不依赖 libopenssl，因为自带 libssl.so.3/libcrypto.so.3
 endef
 
 define Package/smartdns/description
@@ -100,6 +101,13 @@ define Package/smartdns/install
 	$(INSTALL_CONF) $(PKG_BUILD_DIR)/etc/smartdns/custom.conf $(1)/etc/smartdns/
 	$(INSTALL_CONF) $(PKG_BUILD_DIR)/etc/smartdns/domain-block.list $(1)/etc/smartdns/
 	$(INSTALL_CONF) $(PKG_BUILD_DIR)/etc/smartdns/domain-forwarding.list $(1)/etc/smartdns/
+
+	# 创建必要的子目录
+	$(INSTALL_DIR) $(1)/etc/smartdns/conf.d
+	$(INSTALL_DIR) $(1)/etc/smartdns/data
+	$(INSTALL_DIR) $(1)/etc/smartdns/domain-set
+	$(INSTALL_DIR) $(1)/etc/smartdns/ip-set
+	$(INSTALL_DIR) $(1)/etc/smartdns/download
 
 	# 自带的 OpenSSL 3 库（放在私有目录避免污染系统）
 	$(INSTALL_DIR) $(1)/usr/lib/smartdns

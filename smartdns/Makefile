@@ -92,7 +92,7 @@ define Package/smartdns/install
 
 	# UCI 配置
 	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/etc/config/smartdns $(1)/etc/config/
+	$(INSTALL_CONF) $(PKG_BUILD_DIR)/etc/config/smartdns $(1)/etc/config/
 
 	# smartdns 配置目录及默认文件
 	$(INSTALL_DIR) $(1)/etc/smartdns
@@ -118,10 +118,6 @@ endef
 define Package/smartdns-ui/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/usr/lib/smartdns_ui.so $(1)/usr/lib/
-	# 创建符号链接，兼容 smartdns 查找路径
-	ln -sf /usr/lib/smartdns_ui.so $(1)/usr/lib/libsmartdns_ui.so
-	$(INSTALL_DIR) $(1)/usr/lib/smartdns
-	ln -sf /usr/lib/smartdns_ui.so $(1)/usr/lib/smartdns/libsmartdns_ui.so
 
 	# Web 前端文件
 	$(INSTALL_DIR) $(1)/usr/share/smartdns

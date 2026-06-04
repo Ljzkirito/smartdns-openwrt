@@ -71,16 +71,39 @@ define Package/smartdns/conffiles
 /etc/smartdns/domain-forwarding.list
 endef
 
-# 解压 ipk 中的 data.tar.gz 到构建目录
+# 增强版解压与验证
 define Build/Prepare
 	$(eval ipk_file := $(DL_DIR)/$(PKG_SOURCE))
-	@if [ ! -f "$(ipk_file)" ]; then \
-		echo "Error: Downloaded file not found: $(ipk_file)"; \
+	@# 检查文件是否存在且非空
+	@if [ ! -s "$(ipk_file)" ]; then \
+		echo "ERROR: Downloaded file is missing or empty: $(ipk_file)"; \
+		echo "SOLUTION: Manually download from:"; \
+		echo "  $(firstword $(PKG_SOURCE_URL))$(PKG_SOURCE)"; \
+		echo "  and place it in $(DL_DIR)/ directory"; \
 		exit 1; \
 	fi
+	@# 验证IPK格式有效性
+	@if ! tar -tzf "$(ipk_file)" >/dev/null 2>&1; then \
+		echo "ERROR: Corrupted IPK file: $(ipk_file)"; \
+		echo "SOLUTION: Delete it and re-download manually"; \
+		exit 1; \
+	fi
+	@# 验证data.tar.gz存在
+	@if ! tar -tzf "$(ipk_file)" | grep -q "data.tar.gz"; then \
+		echo "ERROR: Invalid IPK structure: missing data.tar.gz"; \
+		exit 1; \
+	fi
+	# 解压data部分到构建目录
 	mkdir -p $(PKG_BUILD_DIR)
-	cd $(PKG_BUILD_DIR) && \
-		tar -xzf "$(ipk_file)" -O ./data.tar.gz | tar -xz
+	cd $(PKG_BUILD_DIR) && tar -xzf "$(ipk_file)" -O ./data.tar.gz | tar -xz
+	@# 最终验证主程序存在
+	@if [ ! -f "$(PKG_BUILD_DIR)/usr/sbin/smartdns" ]; then \
+		echo "ERROR: Failed to extract smartdns binary"; \
+		exit 1; \
+	fi
+endef
+
+define Build/Compile
 endef
 
 define Package/smartdns/install
@@ -96,20 +119,13 @@ define Package/smartdns/install
 
 	# smartdns 配置目录及默认文件
 	$(INSTALL_DIR) $(1)/etc/smartdns
-	$(INSTALL_CONF) $(PKG_BUILD_DIR)/etc/smartdns/address.conf $(1)/etc/smartdns/
-	$(INSTALL_CONF) $(PKG_BUILD_DIR)/etc/smartdns/blacklist-ip.conf $(1)/etc/smartdns/
-	$(INSTALL_CONF) $(PKG_BUILD_DIR)/etc/smartdns/custom.conf $(1)/etc/smartdns/
-	$(INSTALL_CONF) $(PKG_BUILD_DIR)/etc/smartdns/domain-block.list $(1)/etc/smartdns/
-	$(INSTALL_CONF) $(PKG_BUILD_DIR)/etc/smartdns/domain-forwarding.list $(1)/etc/smartdns/
+	$(INSTALL_CONF) $(PKG_BUILD_DIR)/etc/smartdns/*.conf $(1)/etc/smartdns/
+	$(INSTALL_CONF) $(PKG_BUILD_DIR)/etc/smartdns/*.list $(1)/etc/smartdns/
 
-	# 创建必要的子目录
-	$(INSTALL_DIR) $(1)/etc/smartdns/conf.d
-	$(INSTALL_DIR) $(1)/etc/smartdns/data
-	$(INSTALL_DIR) $(1)/etc/smartdns/domain-set
-	$(INSTALL_DIR) $(1)/etc/smartdns/ip-set
-	$(INSTALL_DIR) $(1)/etc/smartdns/download
+	# 必要子目录
+	$(INSTALL_DIR) $(1)/etc/smartdns/{conf.d,data,domain-set,ip-set,download}
 
-	# 自带的 OpenSSL 3 库（放在私有目录避免污染系统）
+	# 自带OpenSSL 3库（私有目录不污染系统）
 	$(INSTALL_DIR) $(1)/usr/lib/smartdns
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/usr/lib/smartdns/libcrypto.so.3 $(1)/usr/lib/smartdns/
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/usr/lib/smartdns/libssl.so.3 $(1)/usr/lib/smartdns/

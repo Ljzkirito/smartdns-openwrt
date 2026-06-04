@@ -28,6 +28,9 @@ PKG_MAINTAINER:=Nick Peng <pymumu@gmail.com>
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_LICENSE_FILES:=LICENSE
 
+PKG_BUILD_PARALLEL:=0
+PKG_INSTALL:=0
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/smartdns/Default
@@ -41,7 +44,7 @@ endef
 define Package/smartdns
   $(call Package/smartdns/Default)
   TITLE+= server
-  DEPENDS:=+libc +libpthread +libz
+  DEPENDS:=+libc +libpthread
   # 不依赖 libopenssl，因为自带 libssl.so.3/libcrypto.so.3
 endef
 
@@ -104,6 +107,9 @@ define Build/Prepare
 endef
 
 define Build/Compile
+endef
+
+define Build/InstallDev
 endef
 
 define Package/smartdns/install

@@ -41,7 +41,7 @@ endef
 define Package/smartdns
   $(call Package/smartdns/Default)
   TITLE+= server
-  DEPENDS:=+libc +libpthread
+  DEPENDS:=+libc +libpthread +libz
   # 不依赖 libopenssl，因为自带 libssl.so.3/libcrypto.so.3
 endef
 

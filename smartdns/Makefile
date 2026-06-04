@@ -6,7 +6,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=smartdns
-PKG_VERSION:=1.2026.v48.0.12
+PKG_VERSION:=1.2026.v48.0.14
 PKG_RELEASE:=1
 
 # 映射 OpenWrt 的 ARCH 到 ipk 文件名中的架构后缀
@@ -80,7 +80,7 @@ define Build/Prepare
 	fi
 	mkdir -p $(PKG_BUILD_DIR)
 	cd $(PKG_BUILD_DIR) && \
-		ar p $(ipk_file) data.tar.gz | tar -xz
+		tar -xzf "$(ipk_file)" -O ./data.tar.gz | tar -xz
 endef
 
 define Package/smartdns/install

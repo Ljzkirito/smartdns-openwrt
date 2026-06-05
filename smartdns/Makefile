@@ -39,7 +39,7 @@ define Package/smartdns
   CATEGORY:=Network
   SUBMENU:=IP Addresses and Names
   URL:=https://www.github.com/pymumu/smartdns/
-  TITLE:=smartdns server
+  TITLE:=smartdns server and dashboard
   DEPENDS:=+libc +libpthread +zlib
 endef
 
@@ -56,24 +56,6 @@ define Package/smartdns/conffiles
 /etc/smartdns/custom.conf
 /etc/smartdns/domain-block.list
 /etc/smartdns/domain-forwarding.list
-endef
-
-define Package/smartdns-ui
-  SECTION:=net
-  CATEGORY:=Network
-  SUBMENU:=IP Addresses and Names
-  TITLE:=smartdns
-  URL:=https://www.github.com/pymumu/smartdns/
-  TITLE:=smartdns dashboard
-  DEPENDS:=+smartdns
-endef
-
-define Package/smartdns-ui/description
-A dashboard ui for smartdns server.
-endef
-
-define Package/smartdns-ui/conffiles
-/etc/config/smartdns
 endef
 
 define Build/Compile
@@ -93,9 +75,7 @@ define Package/smartdns/install
 	$(INSTALL_DIR) $(1)/usr/lib/smartdns
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/tmp/smartdns-openwrt/root/usr/lib/smartdns/libcrypto.so.3 $(1)/usr/lib/smartdns/
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/tmp/smartdns-openwrt/root/usr/lib/smartdns/libssl.so.3 $(1)/usr/lib/smartdns/
-endef
 
-define Package/smartdns-ui/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/tmp/smartdns-openwrt/root/usr/lib/smartdns_ui.so $(1)/usr/lib/
 	$(INSTALL_DIR) $(1)/usr/share/smartdns
@@ -103,4 +83,3 @@ define Package/smartdns-ui/install
 endef
 
 $(eval $(call BuildPackage,smartdns))
-$(eval $(call BuildPackage,smartdns-ui))

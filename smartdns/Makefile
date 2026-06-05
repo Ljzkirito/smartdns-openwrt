@@ -30,23 +30,16 @@ PKG_MAINTAINER:=Nick Peng <pymumu@gmail.com>
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_LICENSE_FILES:=LICENSE
 
-PKG_CONFIG_DEPENDS:=CONFIG_PACKAGE_smartdns-ui
-
 include $(INCLUDE_DIR)/package.mk
 
 TAR_CMD:=$(HOST_TAR) -C $(PKG_BUILD_DIR) $(TAR_OPTIONS)
 
-define Package/smartdns/Default
+define Package/smartdns
   SECTION:=net
   CATEGORY:=Network
   SUBMENU:=IP Addresses and Names
-  TITLE:=smartdns
   URL:=https://www.github.com/pymumu/smartdns/
-endef
-
-define Package/smartdns
-  $(call Package/smartdns/Default)
-  TITLE+= server
+  TITLE:=smartdns server
   DEPENDS:=+libc +libpthread +zlib
 endef
 
@@ -66,8 +59,12 @@ define Package/smartdns/conffiles
 endef
 
 define Package/smartdns-ui
-  $(call Package/smartdns/Default)
-  TITLE+= dashboard
+  SECTION:=net
+  CATEGORY:=Network
+  SUBMENU:=IP Addresses and Names
+  TITLE:=smartdns
+  URL:=https://www.github.com/pymumu/smartdns/
+  TITLE:=smartdns dashboard
   DEPENDS:=+smartdns
 endef
 

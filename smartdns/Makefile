@@ -42,7 +42,7 @@ define Package/smartdns/default
 endef
 
 define Package/smartdns
-  $(Package/smartdns/default)
+  $(call Package/smartdns/default)
   TITLE:=smartdns server
   DEPENDS:=+libc +libpthread +zlib
 endef
@@ -63,7 +63,7 @@ define Package/smartdns/conffiles
 endef
 
 define Package/smartdns-ui
-  $(Package/smartdns/default)
+  $(call Package/smartdns/default)
   TITLE:=smartdns dashboard
   DEPENDS:=+smartdns
 endef

@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2018-2025 Ruilin Peng (Nick) <pymumu@gmail.com>
 # Copyright (C) 2021 ImmortalWrt.org
-# Modified for prebuilt ipk on OpenWrt 21.02
+# Modified for prebuilt tar.gz on OpenWrt 21.02
 
 include $(TOPDIR)/rules.mk
 
@@ -16,7 +16,7 @@ ifeq ($(ARCH),aarch64)
 else ifeq ($(ARCH),x86_64)
   PKG_ARCH:=x86_64
   PKG_HASH:=c33f2b778a61e546ef79d747c77316217144cd5ce0fddc3c1d8ef97d0bd59e16
-else ifeq ($(filter arm%,$(ARCH)),)
+else ifeq ($(ARCH),arm)
   PKG_ARCH:=armv7
   PKG_HASH:=3f5ed64b62ac13d96a3fc757c49609e7484203aca8802acc7a09512f2c320454
 else
@@ -30,25 +30,9 @@ PKG_MAINTAINER:=Nick Peng <pymumu@gmail.com>
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_LICENSE_FILES:=LICENSE
 
-ifeq ($(ARCH),aarch64)
-  PKG_ARCH:=aarch64
-else ifeq ($(ARCH),x86_64)
-  PKG_ARCH:=x86_64
-else ifeq ($(filter arm%,$(ARCH)),)
-  PKG_ARCH:=armv7
-else
-  $(error Unsupported architecture: $(ARCH). PikuZheng prebuilt ipk only provides aarch64, armv7, x86_64)
-endif
-
-PKG_SOURCE:=smartdns_with_ui.$(PKG_VERSION).$(PKG_ARCH).ipk
-PKG_SOURCE_URL:=https://github.com/PikuZheng/smartdns/releases/download/$(PKG_VERSION)_with_ui/
-PKG_HASH:=skip
-
-PKG_MAINTAINER:=Nick Peng <pymumu@gmail.com>
-PKG_LICENSE:=GPL-3.0-or-later
-PKG_LICENSE_FILES:=LICENSE
-
 include $(INCLUDE_DIR)/package.mk
+
+TAR_CMD:=$(HOST_TAR) -C $(PKG_BUILD_DIR) $(TAR_OPTIONS)
 
 define Package/smartdns/Default
   SECTION:=net
@@ -62,7 +46,7 @@ endef
 define Package/smartdns
   $(call Package/smartdns/Default)
   TITLE+= server
-  DEPENDS:=+libc +libpthread +libz
+  DEPENDS:=+libc +libpthread +zlib
 endef
 
 define Package/smartdns/description
@@ -90,8 +74,6 @@ define Package/smartdns/conffiles
 /etc/smartdns/domain-block.list
 /etc/smartdns/domain-forwarding.list
 endef
-
-TAR_CMD:=$(HOST_TAR) -C $(PKG_BUILD_DIR) $(TAR_OPTIONS)
 
 define Build/Compile
 endef

@@ -34,36 +34,23 @@ include $(INCLUDE_DIR)/package.mk
 
 TAR_CMD:=$(HOST_TAR) -C $(PKG_BUILD_DIR) $(TAR_OPTIONS)
 
-define Package/smartdns/Default
+define Package/smartdns/default
   SECTION:=net
   CATEGORY:=Network
   SUBMENU:=IP Addresses and Names
-  TITLE:=smartdns
   URL:=https://www.github.com/pymumu/smartdns/
-  DEPENDS:=@(aarch64||arm||x86_64)
 endef
 
 define Package/smartdns
-  $(call Package/smartdns/Default)
-  TITLE+= server
+  $(Package/smartdns/default)
+  TITLE:=smartdns server
   DEPENDS:=+libc +libpthread +zlib
 endef
 
 define Package/smartdns/description
-SmartDNS is a local DNS server which accepts DNS query requests from local clients,
-gets DNS query results from multiple upstream DNS servers concurrently,
-and returns the fastest IP to clients. Supports DoT, DoH, DoQ, DoH3.
-This package uses prebuilt binary with bundled OpenSSL 3 libraries.
-endef
-
-define Package/smartdns-ui
-  $(call Package/smartdns/Default)
-  TITLE+= dashboard
-  DEPENDS:=+smartdns
-endef
-
-define Package/smartdns-ui/description
-A dashboard UI for smartdns server.
+SmartDNS is a local DNS server which accepts DNS query requests from local network clients,
+gets DNS query results from multiple upstream DNS servers concurrently, and returns the fastest IP to clients.
+Unlike dnsmasq's all-servers, smartdns returns the fastest IP, and encrypt DNS queries with DoT or DoH. 
 endef
 
 define Package/smartdns/conffiles
@@ -73,6 +60,20 @@ define Package/smartdns/conffiles
 /etc/smartdns/custom.conf
 /etc/smartdns/domain-block.list
 /etc/smartdns/domain-forwarding.list
+endef
+
+define Package/smartdns-ui
+  $(Package/smartdns/default)
+  TITLE:=smartdns dashboard
+  DEPENDS:=+smartdns
+endef
+
+define Package/smartdns-ui/description
+A dashboard ui for smartdns server.
+endef
+
+define Package/smartdns-ui/conffiles
+/etc/config/smartdns
 endef
 
 define Build/Compile

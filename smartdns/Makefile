@@ -6,7 +6,7 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=smartdns-ui
+PKG_NAME:=smartdns
 PKG_VERSION:=48.0.16
 PKG_RELEASE:=1
 
@@ -36,7 +36,7 @@ include $(INCLUDE_DIR)/package.mk
 
 TAR_CMD:=$(HOST_TAR) -C $(PKG_BUILD_DIR) $(TAR_OPTIONS)
 
-define Package/smartdns-ui
+define Package/smartdns
   SECTION:=net
   CATEGORY:=Network
   SUBMENU:=IP Addresses and Names
@@ -45,14 +45,14 @@ define Package/smartdns-ui
   DEPENDS:=@(aarch64||arm||x86_64) +libc +libpthread +zlib
 endef
 
-define Package/smartdns-ui/description
+define Package/smartdns/description
 SmartDNS is a local DNS server which accepts DNS query requests from local network clients,
 gets DNS query results from multiple upstream DNS servers concurrently, and returns the fastest IP to clients.
 Unlike dnsmasq's all-servers, smartdns returns the fastest IP, and encrypt DNS queries with DoT or DoH. 
 A dashboard ui for smartdns server.
 endef
 
-define Package/smartdns-ui/conffiles
+define Package/smartdns/conffiles
 /etc/config/smartdns
 /etc/smartdns/address.conf
 /etc/smartdns/blacklist-ip.conf
@@ -64,7 +64,7 @@ endef
 define Build/Compile
 endef
 
-define Package/smartdns-ui/install
+define Package/smartdns/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/tmp/smartdns-openwrt/root/usr/sbin/smartdns $(1)/usr/sbin/
 	$(INSTALL_DIR) $(1)/etc/init.d
@@ -85,4 +85,4 @@ define Package/smartdns-ui/install
 	$(CP) $(PKG_BUILD_DIR)/tmp/smartdns-openwrt/root/usr/share/smartdns/wwwroot $(1)/usr/share/smartdns/
 endef
 
-$(eval $(call BuildPackage,smartdns-ui))
+$(eval $(call BuildPackage,smartdns))

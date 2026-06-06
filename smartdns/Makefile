@@ -7,12 +7,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=smartdns
-PKG_VERSION:=48.0.16
+PKG_VERSION:=48.0.17
 PKG_RELEASE:=1
 
 ifeq ($(ARCH),aarch64)
   PKG_ARCH:=aarch64
-  PKG_HASH:=a3ef6c86f21a5340eab9a6f3d8436904dcae8ecf184ae992ad43bc5ffa99f9fa
+  PKG_HASH:=f38603bad52da8c1989a8fc534a5c90c871f87756c76f46bbaf9221760eb426a
 else ifeq ($(ARCH),x86_64)
   PKG_ARCH:=x86_64
   PKG_HASH:=skip

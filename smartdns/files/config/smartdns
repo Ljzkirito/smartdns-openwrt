@@ -1,4 +1,25 @@
-config 'smartdns'
-	option 'enabled' '0'
-	
-config 'domain-rule'
+
+config smartdns
+	option cache_size '8000'
+	option enabled '0'
+	option ui '1'
+
+config domain-rule
+
+config server
+	option enabled '1'
+	option name 'DNSPod'
+	option ip 'https://doh.pub/dns-query'
+	option type 'https'
+
+config server
+	option enabled '1'
+	option ip 'h3://dns.alidns.com/dns-query'
+	option type 'h3'
+	option name 'Alidns'
+
+config server
+	option enabled '1'
+	option name 'Alidns'
+	option ip 'quic://dns.alidns.com'
+	option type 'quic'

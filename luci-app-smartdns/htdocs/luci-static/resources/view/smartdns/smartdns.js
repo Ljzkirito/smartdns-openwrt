@@ -325,8 +325,8 @@ return view.extend({
 		o.depends('tls_server', '1');
 		o.depends('doh_server', '1');
 
-		// Support IPv6;
-		o = s.taboption("advanced", form.Flag, "ipv6_server", _("IPv6 Server"), _("Enable IPv6 DNS Server"));
+		// Support IPV6;
+		o = s.taboption("advanced", form.Flag, "ipv6_server", _("IPV6 Server"), _("Enable IPV6 DNS Server"));
 		o.rmempty = false;
 		o.default = o.enabled;
 
@@ -343,7 +343,7 @@ return view.extend({
 
 		// Support DualStack ip selection;
 		o = s.taboption("advanced", form.Flag, "dualstack_ip_selection", _("Dual-stack IP Selection"),
-			_("Enable IP selection between IPv4 and IPv6"));
+			_("Enable IP selection between IPV4 and IPV6"));
 		o.rmempty = false;
 		o.default = o.enabled;
 
@@ -369,7 +369,7 @@ return view.extend({
 		o.default = o.enabled;
 
 		// resolve local hostname;
-		o = s.taboption("advanced", form.Flag, "resolve_local_hostnames", _("Resolve Local Hostnames"), _("Resolve local hostnames by reading Dnsmasq lease file."));
+		o = s.taboption("advanced", form.Flag, "resolve_local_hostnames", _("Resolve Local Hostnames"), _("Resolve local hostnames by reading Dnsmasq or odhcpd lease files."));
 		o.rmempty = false;
 		o.default = o.enabled;
 
@@ -833,21 +833,6 @@ return view.extend({
 		o.placeholder = "/var/log/smartdns/smartdns.log"
 		o.depends("log_output_mode", "file");
 
-		o = s.taboption("custom", form.DummyValue, "view_log", _("View Log"));
-		o.renderWidget = function () {
-			return E('button', {
-				'class': 'btn cbi-button',
-				'id': 'btn_view_log',
-				'click': ui.createHandlerFn(this, function () {
-					window.location.href = "/cgi-bin/luci/admin/services/smartdns/log";
-				})
-			}, [_("View Log")]);
-		}
-		const log_levels = ["debug", "info", "notice", "warn", "error", "fatal"];
-		log_levels.forEach(function(level) {
-			o.depends({ log_output_mode: "file", log_level: level });
-		});
-
 		o = s.taboption("custom", form.Flag, "enable_audit_log", _("Enable Audit Log"));
 		o.rmempty = true;
 		o.default = o.disabled;
@@ -879,7 +864,7 @@ return view.extend({
 		// Upstream servers;
 		////////////////
 		s = m.section(form.GridSection, "server", _("Upstream Servers"),
-			_("Upstream Servers, support UDP, TCP, DoT, DoH, DoQ, DoH3 protocol. Please configure multiple DNS servers, "
+			_("Upstream Servers, support UDP, TCP, TLS, HTTPS, QUIC and HTTP3 protocol. Please configure multiple DNS servers, "
 				+ "including multiple foreign DNS servers."));
 		s.anonymous = true;
 		s.addremove = true;
@@ -920,7 +905,7 @@ return view.extend({
 		o.value("tls", _("tls"));
 		o.value("https", _("https"));
 		o.value("quic", _("quic"));
-		o.value("h3", _("h3"));
+		o.value("h3", _("http3"));
 		o.default = "udp";
 		o.rempty = false;
 
@@ -964,10 +949,10 @@ return view.extend({
 		o.datatype = "string"
 		o.rempty = true
 		o.modalonly = true;
-		o.depends("type", "tls");
-		o.depends("type", "https");
-		o.depends("type", "quic");
-		o.depends("type", "h3");
+		o.depends("type", "tls")
+		o.depends("type", "https")
+		o.depends("type", "quic")
+		o.depends("type", "h3")
 
 		// certificate verify
 		o = s.taboption("advanced", form.Flag, "no_check_certificate", _("No check certificate"),
@@ -975,10 +960,10 @@ return view.extend({
 		o.rmempty = true
 		o.default = o.disabled
 		o.modalonly = true;
-		o.depends("type", "tls");
-		o.depends("type", "https");
-		o.depends("type", "quic");
-		o.depends("type", "h3");
+		o.depends("type", "tls")
+		o.depends("type", "https")
+		o.depends("type", "quic")
+		o.depends("type", "h3")
 
 		// SNI host name
 		o = s.taboption("advanced", form.Value, "host_name", _("TLS SNI name"),
@@ -987,10 +972,10 @@ return view.extend({
 		o.datatype = "hostname"
 		o.rempty = true
 		o.modalonly = true;
-		o.depends("type", "tls");
-		o.depends("type", "https");
-		o.depends("type", "quic");
-		o.depends("type", "h3");
+		o.depends("type", "tls")
+		o.depends("type", "https")
+		o.depends("type", "quic")
+		o.depends("type", "h3")
 
 		// http host
 		o = s.taboption("advanced", form.Value, "http_host", _("HTTP Host"),
@@ -999,8 +984,8 @@ return view.extend({
 		o.datatype = "hostname"
 		o.rempty = true
 		o.modalonly = true;
-		o.depends("type", "https");
-		o.depends("type", "h3");
+		o.depends("type", "https")
+		o.depends("type", "h3")
 
 		// SPKI pin
 		o = s.taboption("advanced", form.Value, "spki_pin", _("TLS SPKI Pinning"),
@@ -1010,10 +995,10 @@ return view.extend({
 		o.datatype = "string"
 		o.rempty = true
 		o.modalonly = true;
-		o.depends("type", "tls");
-		o.depends("type", "https");
-		o.depends("type", "quic");
-		o.depends("type", "h3");
+		o.depends("type", "tls")
+		o.depends("type", "https")
+		o.depends("type", "quic")
+		o.depends("type", "h3")
 
 		// mark
 		o = s.taboption("advanced", form.Value, "set_mark", _("Marking Packets"),
@@ -1042,8 +1027,9 @@ return view.extend({
 				return _("Please set proxy server first.");
 			}
 
-			if (server_type == "udp" && !proxy_server.match(/^(socks5):\/\//)) {
-				return _("Only socks5 proxy support udp server.");
+			if ((server_type == "udp" || server_type == "quic" || server_type == "h3")
+				&& !proxy_server.match(/^(socks5):\/\//)) {
+				return _("Only socks5 proxy support UDP, QUIC and HTTP3 server.");
 			}
 
 			return true;
@@ -1188,7 +1174,7 @@ return view.extend({
 
 		// Support DualStack ip selection;
 		o = s.taboption("advanced", form.Flag, "dualstack_ip_selection", _("Dual-stack IP Selection"),
-			_("Enable IP selection between IPv4 and IPv6"));
+			_("Enable IP selection between IPV4 and IPV6"));
 		o.rmempty = false;
 		o.default = o.enabled;
 
@@ -1358,7 +1344,7 @@ return view.extend({
 
 		// Support DualStack ip selection;
 		o = s.taboption("forwarding", form.ListValue, "dualstack_ip_selection", _("Dual-stack IP Selection"),
-			_("Enable IP selection between IPv4 and IPv6"));
+			_("Enable IP selection between IPV4 and IPV6"));
 		o.rmempty = true;
 		o.default = "default";
 		o.modalonly = true;
@@ -1532,7 +1518,7 @@ return view.extend({
 
 		// Support DualStack ip selection;
 		so = ss.option(form.ListValue, "dualstack_ip_selection", _("Dual-stack IP Selection"),
-			_("Enable IP selection between IPv4 and IPv6"));
+			_("Enable IP selection between IPV4 and IPV6"));
 		so.rmempty = true;
 		so.default = "default";
 		so.modalonly = true;

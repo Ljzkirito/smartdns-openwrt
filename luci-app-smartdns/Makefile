@@ -15,7 +15,6 @@ LUCI_PKGARCH:=all
 LUCI_TITLE:=LuCI for smartdns
 LUCI_DESCRIPTION:=Provides Luci for smartdns
 LUCI_DEPENDS:=+smartdns
-LUCI_ACL:=luci-app-smartdns
 
 include $(TOPDIR)/feeds/luci/luci.mk
 

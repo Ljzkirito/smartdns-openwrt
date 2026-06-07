@@ -41,9 +41,11 @@ function getServiceStatus() {
 			let is_running = false;
 			try {
 				is_running = res[conf]['instances']['smartdns']['running'];
-			} catch (e) { }
+			} catch (e) {
+
+			}
 			return is_running;
-		});
+		})
 }
 
 function smartdnsServiceStatus() {
@@ -104,14 +106,14 @@ function isSmartdnsUiAvailable() {
 }
 
 return view.extend({
-	load() {
+	load: function () {
 		return Promise.all([
 			uci.load('dhcp'),
 			uci.load('smartdns'),
-			isSmartdnsUiAvailable()
+			isSmartdnsUiAvailable(),
 		]);
 	},
-	render(stats) {
+	render: function (stats) {
 		let m, s, o;
 		let ss, so;
 		let servers, download_files;
@@ -325,8 +327,8 @@ return view.extend({
 		o.depends('tls_server', '1');
 		o.depends('doh_server', '1');
 
-		// Support IPV6;
-		o = s.taboption("advanced", form.Flag, "ipv6_server", _("IPV6 Server"), _("Enable IPV6 DNS Server"));
+		// Support IPv6;
+		o = s.taboption("advanced", form.Flag, "ipv6_server", _("IPv6 Server"), _("Enable IPv6 DNS Server"));
 		o.rmempty = false;
 		o.default = o.enabled;
 
@@ -343,7 +345,7 @@ return view.extend({
 
 		// Support DualStack ip selection;
 		o = s.taboption("advanced", form.Flag, "dualstack_ip_selection", _("Dual-stack IP Selection"),
-			_("Enable IP selection between IPV4 and IPV6"));
+			_("Enable IP selection between IPv4 and IPv6"));
 		o.rmempty = false;
 		o.default = o.enabled;
 
@@ -864,7 +866,7 @@ return view.extend({
 		// Upstream servers;
 		////////////////
 		s = m.section(form.GridSection, "server", _("Upstream Servers"),
-			_("Upstream Servers, support UDP, TCP, TLS, HTTPS, QUIC and HTTP3 protocol. Please configure multiple DNS servers, "
+			_("Upstream Servers, support UDP, TCP, DoT, DoH, DoQ, DoH3 protocol. Please configure multiple DNS servers, "
 				+ "including multiple foreign DNS servers."));
 		s.anonymous = true;
 		s.addremove = true;
@@ -905,7 +907,7 @@ return view.extend({
 		o.value("tls", _("tls"));
 		o.value("https", _("https"));
 		o.value("quic", _("quic"));
-		o.value("h3", _("http3"));
+		o.value("h3", _("h3"));
 		o.default = "udp";
 		o.rempty = false;
 
@@ -1174,7 +1176,7 @@ return view.extend({
 
 		// Support DualStack ip selection;
 		o = s.taboption("advanced", form.Flag, "dualstack_ip_selection", _("Dual-stack IP Selection"),
-			_("Enable IP selection between IPV4 and IPV6"));
+			_("Enable IP selection between IPv4 and IPv6"));
 		o.rmempty = false;
 		o.default = o.enabled;
 
@@ -1344,7 +1346,7 @@ return view.extend({
 
 		// Support DualStack ip selection;
 		o = s.taboption("forwarding", form.ListValue, "dualstack_ip_selection", _("Dual-stack IP Selection"),
-			_("Enable IP selection between IPV4 and IPV6"));
+			_("Enable IP selection between IPv4 and IPv6"));
 		o.rmempty = true;
 		o.default = "default";
 		o.modalonly = true;
@@ -1518,7 +1520,7 @@ return view.extend({
 
 		// Support DualStack ip selection;
 		so = ss.option(form.ListValue, "dualstack_ip_selection", _("Dual-stack IP Selection"),
-			_("Enable IP selection between IPV4 and IPV6"));
+			_("Enable IP selection between IPv4 and IPv6"));
 		so.rmempty = true;
 		so.default = "default";
 		so.modalonly = true;

@@ -1,10 +1,22 @@
 
 config smartdns
-	option cache_size '8000'
 	option enabled '0'
 	option ui '1'
+	option cache_size '8000'
 
 config domain-rule
+
+config server
+	option enabled '1'
+	option name 'Alidns'
+	option ip 'quic://dns.alidns.com'
+	option type 'quic'
+
+config server
+	option enabled '1'
+	option name 'Alidns'
+	option ip 'h3://dns.alidns.com/dns-query'
+	option type 'h3'
 
 config server
 	option enabled '1'
@@ -14,12 +26,14 @@ config server
 
 config server
 	option enabled '1'
-	option ip 'h3://dns.alidns.com/dns-query'
-	option type 'h3'
-	option name 'Alidns'
+	option name 'Bootstrap DNS'
+	option ip '223.5.5.5'
+	option type 'udp'
+	option addition_arg '-bootstrap-dns'
 
 config server
 	option enabled '1'
-	option name 'Alidns'
-	option ip 'quic://dns.alidns.com'
-	option type 'quic'
+	option name 'Bootstrap DNS'
+	option ip '119.29.29.29'
+	option type 'udp'
+	option addition_arg '-bootstrap-dns'

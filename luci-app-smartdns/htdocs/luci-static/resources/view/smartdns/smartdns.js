@@ -45,7 +45,7 @@ function getServiceStatus() {
 
 			}
 			return is_running;
-		})
+		});
 }
 
 function smartdnsServiceStatus() {
@@ -298,6 +298,10 @@ return view.extend({
 		// Enable DOH server;
 		o = s.taboption("advanced", form.Flag, "doh_server", _("DOH Server"), _("Enable DOH DNS Server"));
 		o.rmempty = false;
+		o.default = o.disabled;
+
+		o = s.taboption("advanced", form.Flag, "ddr", _("DDR"), _("Enable Discovery of Designated Resolvers for enabled local DNS services."));
+		o.rmempty = true;
 		o.default = o.disabled;
 
 		o = s.taboption("advanced", form.Value, "doh_server_port", _("DOH Server Port"), _("Smartdns DOH server port."));

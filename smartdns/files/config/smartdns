@@ -2,7 +2,7 @@
 config smartdns
 	option enabled '0'
 	option ui '1'
-	option cache_size '8000'
+	option cache_size '5000'
 
 config domain-rule
 

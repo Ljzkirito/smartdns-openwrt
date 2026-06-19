@@ -41,22 +41,13 @@ function getServiceStatus() {
 			let is_running = false;
 			try {
 				is_running = res[conf]['instances']['smartdns']['running'];
-			} catch (e) {
-
-			}
+			} catch (e) { }
 			return is_running;
 		});
 }
 
-function smartdnsServiceStatus() {
-	return Promise.all([
-		getServiceStatus()
-	]);
-}
-
-function smartdnsRenderStatus(res) {
+function smartdnsRenderStatus(isRunning) {
 	let renderHTML = "";
-	let isRunning = res[0];
 
 	const autoSetDnsmasq = uci.get_first('smartdns', 'smartdns', 'auto_set_dnsmasq');
 	const smartdnsPort = uci.get_first('smartdns', 'smartdns', 'port');
@@ -106,14 +97,14 @@ function isSmartdnsUiAvailable() {
 }
 
 return view.extend({
-	load: function () {
+	load() {
 		return Promise.all([
 			uci.load('dhcp'),
 			uci.load('smartdns'),
-			isSmartdnsUiAvailable(),
+			isSmartdnsUiAvailable()
 		]);
 	},
-	render: function (stats) {
+	render(stats) {
 		let m, s, o;
 		let ss, so;
 		let servers, download_files;
@@ -128,7 +119,7 @@ return view.extend({
 		s.anonymous = true;
 		s.render = function (section_id) {
 			const renderStatus = function () {
-				return L.resolveDefault(smartdnsServiceStatus()).then(function (res) {
+				return L.resolveDefault(getServiceStatus()).then(function (res) {
 					const view = document.getElementById("service_status");
 					if (view == null) {
 						return;
@@ -955,10 +946,10 @@ return view.extend({
 		o.datatype = "string"
 		o.rempty = true
 		o.modalonly = true;
-		o.depends("type", "tls")
-		o.depends("type", "https")
-		o.depends("type", "quic")
-		o.depends("type", "h3")
+		o.depends("type", "tls");
+		o.depends("type", "https");
+		o.depends("type", "quic");
+		o.depends("type", "h3");
 
 		// certificate verify
 		o = s.taboption("advanced", form.Flag, "no_check_certificate", _("No check certificate"),
@@ -966,10 +957,10 @@ return view.extend({
 		o.rmempty = true
 		o.default = o.disabled
 		o.modalonly = true;
-		o.depends("type", "tls")
-		o.depends("type", "https")
-		o.depends("type", "quic")
-		o.depends("type", "h3")
+		o.depends("type", "tls");
+		o.depends("type", "https");
+		o.depends("type", "quic");
+		o.depends("type", "h3");
 
 		// SNI host name
 		o = s.taboption("advanced", form.Value, "host_name", _("TLS SNI name"),
@@ -978,10 +969,10 @@ return view.extend({
 		o.datatype = "hostname"
 		o.rempty = true
 		o.modalonly = true;
-		o.depends("type", "tls")
-		o.depends("type", "https")
-		o.depends("type", "quic")
-		o.depends("type", "h3")
+		o.depends("type", "tls");
+		o.depends("type", "https");
+		o.depends("type", "quic");
+		o.depends("type", "h3");
 
 		// http host
 		o = s.taboption("advanced", form.Value, "http_host", _("HTTP Host"),
@@ -990,8 +981,8 @@ return view.extend({
 		o.datatype = "hostname"
 		o.rempty = true
 		o.modalonly = true;
-		o.depends("type", "https")
-		o.depends("type", "h3")
+		o.depends("type", "https");
+		o.depends("type", "h3");
 
 		// SPKI pin
 		o = s.taboption("advanced", form.Value, "spki_pin", _("TLS SPKI Pinning"),
@@ -1001,10 +992,10 @@ return view.extend({
 		o.datatype = "string"
 		o.rempty = true
 		o.modalonly = true;
-		o.depends("type", "tls")
-		o.depends("type", "https")
-		o.depends("type", "quic")
-		o.depends("type", "h3")
+		o.depends("type", "tls");
+		o.depends("type", "https");
+		o.depends("type", "quic");
+		o.depends("type", "h3");
 
 		// mark
 		o = s.taboption("advanced", form.Value, "set_mark", _("Marking Packets"),

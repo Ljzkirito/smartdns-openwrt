@@ -1214,3 +1214,9 @@ msgstr "重启"
 
 #~ msgid "Grant access to LuCI app smartdns"
 #~ msgstr "授予访问 LuCI 应用 smartdns 的权限"
+
+msgid "DDR"
+msgstr "DDR"
+
+msgid "Enable Discovery of Designated Resolvers for enabled local DNS services."
+msgstr "为当前启用的本地DNS服务启用指定解析器发现。"

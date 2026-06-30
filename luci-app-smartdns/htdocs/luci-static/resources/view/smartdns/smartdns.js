@@ -46,6 +46,14 @@ function getServiceStatus() {
 		});
 }
 
+function smartdnsServiceStatus() {
+	return Promise.all([
+		getServiceStatus(),
+		uci.unload('dhcp'),
+		uci.load('dhcp')
+	]);
+}
+
 function smartdnsRenderStatus(isRunning) {
 	let renderHTML = "";
 
@@ -78,8 +86,6 @@ function smartdnsRenderStatus(isRunning) {
 	if (autoSetDnsmasq === '1' && smartdnsPort != '53') {
 		const matchLine = "127.0.0.1#" + smartdnsPort;
 
-		uci.unload('dhcp');
-		uci.load('dhcp');
 		if (dnsmasqServer == undefined || dnsmasqServer.indexOf(matchLine) < 0) {
 			renderHTML += "<br /><span style=\"color:red;font-weight:bold\">" + _("Dnsmasq Forwarded To Smartdns Failure") + "</span>";
 		}
@@ -119,7 +125,7 @@ return view.extend({
 		s.anonymous = true;
 		s.render = function (section_id) {
 			const renderStatus = function () {
-				return L.resolveDefault(getServiceStatus()).then(function (res) {
+				return L.resolveDefault(smartdnsServiceStatus()).then(function (res) {
 					const view = document.getElementById("service_status");
 					if (view == null) {
 						return;

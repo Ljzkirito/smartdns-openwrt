@@ -8,11 +8,11 @@
 | 软件包 | 内容 | 依赖 |
 | --- | --- | --- |
 | `smartdns` | `/usr/sbin/smartdns`、init 脚本、`/etc/config/smartdns` 与默认配置、OpenSSL 3.x 运行库 | `libc`、`libpthread`、`zlib` |
-| `smartdns-ui` | Web 面板：`/usr/lib/smartdns_ui.so` 与 `/usr/share/smartdns/wwwroot` | `smartdns` |
-| `luci-app-smartdns` | LuCI 配置页面 | `smartdns`，可选 `smartdns-ui` |
+| `WebUI` | Web 面板：`/usr/lib/smartdns_ui.so` 与 `/usr/share/smartdns/wwwroot` | `smartdns` |
+| `luci-app-smartdns` | LuCI 配置页面 | `smartdns`，可选 `WebUI` |
 
-安装 `luci-app-smartdns` 时，`Include smartdns-ui` 选项（`PACKAGE_luci-app-smartdns_INCLUDE_smartdns_ui`，**默认关闭**）决定是否一并安装面板。
-默认只安装 DNS 服务端；需要面板时，在 menuconfig 中勾选该子选项，或在 `.config` 中写入 `CONFIG_PACKAGE_luci-app-smartdns_INCLUDE_smartdns_ui=y`（等价于直接选中 `CONFIG_PACKAGE_smartdns-ui=y`）。
+安装 `luci-app-smartdns` 时，`Include WebUI` 选项（`PACKAGE_luci-app-smartdns_INCLUDE_WebUI`，**默认关闭**）决定是否一并安装面板。
+默认只安装 DNS 服务端；需要面板时，在 menuconfig 中勾选该子选项，或在 `.config` 中写入 `CONFIG_PACKAGE_luci-app-smartdns_INCLUDE_WebUI=y`（等价于直接选中 `CONFIG_PACKAGE_smartdns-ui=y`）。
 未安装面板时，LuCI 页面不会显示 Web 面板相关设置。
 若曾开启 Web 面板后又卸载 `smartdns-ui`，init 脚本会检测到插件缺失并跳过面板配置，不影响 DNS 服务启动。
 
@@ -23,7 +23,7 @@
 - **OpenSSL 版本**：OpenWrt 21.02 自带的 OpenSSL 为 1.1.1，缺少 QUIC / HTTP3 所需的 TLS 接口，因此 **不支持 DoQ / DoH3**。预构建包内置 OpenSSL 3.5.8 LTS，并以 `/usr/lib/smartdns/` 下的独立库文件提供，不再依赖系统 OpenSSL，从而补齐 DoQ / DoH3 支持。
 - **Rust 工具链**：`smartdns-ui` 由 Rust 编写，而 OpenWrt 21.02 的软件源中没有 Rust，无法在 21.02 上现场编译面板，只能使用预构建产物。
 
-代价是只能覆盖官方提供预构建的架构：`aarch64`、`arm`（armv7）、`x86_64`。其他架构请在 Makefile 中补充对应的 `PKG_ARCH` 与 `PKG_HASH`，或自行交叉编译。
+只能覆盖官方提供预构建的架构：`aarch64`、`arm`（armv7）、`x86_64`。
 
 ## 升级版本
 
@@ -42,4 +42,4 @@ make package/smartdns/compile V=s
 make package/luci-app-smartdns/compile V=s
 ```
 
-`Include smartdns-ui` 默认关闭：只装服务端时无需额外操作；需要 Web 面板时，请在选择 `luci-app-smartdns` 后勾选该子选项，或直接选中 `smartdns-ui`（两者等价），否则 `smartdns-ui` 不会被编译进固件。
+`Include WebUI` 默认关闭：只装服务端时无需额外操作；需要 Web 面板时，请在选择 `luci-app-smartdns` 后勾选该子选项，或直接选中 `smartdns-ui`（两者等价），否则 `smartdns-ui` 不会被编译进固件。

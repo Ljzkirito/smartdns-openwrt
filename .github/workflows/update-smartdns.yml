@@ -1,0 +1,258 @@
+name: Update smartdns
+
+# 上游信息集中在此：年份前缀 / 上游仓库 / 资产命名变化时只需改这几行
+env:
+  UPSTREAM_REPO: PikuZheng/smartdns
+  TAG_PREFIX: "1.2026.v"             # release tag = <TAG_PREFIX><版本><TAG_SUFFIX>
+  TAG_SUFFIX: "_with_ui"
+  ASSET_PREFIX: "smartdns_with_ui"   # 资产 = <ASSET_PREFIX>.<TAG_PREFIX><版本>.<arch>.tar.gz
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "smartdns 版本号，如 48.5.2（留空自动取上游最新稳定版）"
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-smartdns-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - name: Resolve version
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+
+          # 归一化为裸版本号，接受 48.5.2 / 1.2026.v48.5.2_with_ui / 1.2026.v48.5.2_with_ui-canary
+          normalize() {
+            local v="$1"
+            v="${v#"$TAG_PREFIX"}"
+            v="${v%%"$TAG_SUFFIX"*}"
+            printf '%s' "$v"
+          }
+
+          if [ -n "${INPUT_VERSION//[[:space:]]/}" ]; then
+            ver="$(normalize "$INPUT_VERSION")"
+            echo "使用手动输入的版本: $ver"
+          else
+            # 拉取稳定 release 列表（排除 draft/prerelease，即不含 -canary）
+            if ! raw_tags="$(gh api --paginate "repos/${UPSTREAM_REPO}/releases?per_page=100" \
+                --jq '.[] | select(.draft == false and .prerelease == false) | .tag_name')"; then
+              echo "::error::无法读取 ${UPSTREAM_REPO} 的 release 列表" >&2
+              exit 1
+            fi
+
+            versions=()
+            while IFS= read -r name; do
+              [ -n "$name" ] || continue
+              if [[ "$name" == "${TAG_PREFIX}"*"${TAG_SUFFIX}" ]]; then
+                core="${name#"$TAG_PREFIX"}"
+                core="${core%%"$TAG_SUFFIX"*}"
+                if [[ "$core" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                  versions+=("$core")
+                fi
+              fi
+            done <<< "$raw_tags"
+
+            ver=""
+            if [ "${#versions[@]}" -gt 0 ]; then
+              ver="$(printf '%s\n' "${versions[@]}" | sort -V | tail -n1)"
+            fi
+            echo "上游最新稳定版: ${ver:-<空>}"
+          fi
+
+          if ! [[ "$ver" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::无法确定 smartdns 版本，请检查上游 release 或手动填写 version" >&2
+            exit 1
+          fi
+
+          tag="${TAG_PREFIX}${ver}${TAG_SUFFIX}"
+          if ! gh api "repos/${UPSTREAM_REPO}/releases/tags/${tag}" >/dev/null 2>&1; then
+            echo "::error::${UPSTREAM_REPO} 中不存在 release ${tag}" >&2
+            exit 1
+          fi
+
+          {
+            echo "version=$ver"
+            echo "tag=$tag"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Check Makefile source template
+        run: |
+          set -euo pipefail
+          expected_source="PKG_SOURCE:=${ASSET_PREFIX}.${TAG_PREFIX}\$(PKG_VERSION).\$(PKG_ARCH).tar.gz"
+          expected_url="PKG_SOURCE_URL:=https://github.com/${UPSTREAM_REPO}/releases/download/${TAG_PREFIX}\$(PKG_VERSION)${TAG_SUFFIX}/"
+
+          if ! grep -qF -- "$expected_source" smartdns/Makefile; then
+            echo "::error::smartdns/Makefile 的 PKG_SOURCE 与 workflow 的 ASSET_PREFIX/TAG_PREFIX 不一致" >&2
+            echo "期望: $expected_source" >&2
+            grep -n '^PKG_SOURCE:=' smartdns/Makefile >&2 || true
+            exit 1
+          fi
+
+          if ! grep -qF -- "$expected_url" smartdns/Makefile; then
+            echo "::error::smartdns/Makefile 的 PKG_SOURCE_URL 与 workflow 的 UPSTREAM_REPO/TAG_PREFIX/TAG_SUFFIX 不一致" >&2
+            echo "期望: $expected_url" >&2
+            grep -n '^PKG_SOURCE_URL:=' smartdns/Makefile >&2 || true
+            exit 1
+          fi
+          echo "Makefile 源码模板与 workflow 配置一致"
+
+      - name: Download assets and hash
+        id: hash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/dl"
+
+          for arch in aarch64 armv7 x86_64; do
+            name="${ASSET_PREFIX}.${TAG_PREFIX}${VERSION}.${arch}.tar.gz"
+
+            gh release download "$TAG" --repo "$UPSTREAM_REPO" \
+              --pattern "$name" --dir "$RUNNER_TEMP/dl" --clobber || {
+                echo "::error::${TAG} 中没有资产 ${name}" >&2
+                echo "该 release 现有资产：" >&2
+                gh release view "$TAG" --repo "$UPSTREAM_REPO" --json assets \
+                  --jq '.assets[].name' >&2 || true
+                exit 1
+              }
+
+            file="$RUNNER_TEMP/dl/$name"
+            size="$(stat -c%s "$file")"
+            if [ "$size" -lt 1000000 ]; then
+              echo "::error::$arch 资产大小异常（$size 字节）" >&2
+              exit 1
+            fi
+
+            tar -tzf "$file" | grep -q 'usr/sbin/smartdns' || {
+              echo "::error::$arch 资产缺少 usr/sbin/smartdns" >&2; exit 1; }
+            tar -tzf "$file" | grep -q 'usr/lib/smartdns_ui.so' || {
+              echo "::error::$arch 资产不含 Web 面板（usr/lib/smartdns_ui.so）" >&2; exit 1; }
+
+            sum="$(sha256sum "$file" | cut -d' ' -f1)"
+            echo "$arch: $sum"
+            echo "${arch}=${sum}" >> "$GITHUB_OUTPUT"
+          done
+
+      - name: Update smartdns/Makefile
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          HASH_AARCH64: ${{ steps.hash.outputs.aarch64 }}
+          HASH_X86_64: ${{ steps.hash.outputs.x86_64 }}
+          HASH_ARM: ${{ steps.hash.outputs.armv7 }}
+        run: |
+          python3 - <<'PY'
+          import os
+          import re
+
+          version = os.environ["VERSION"]
+          hashes = {
+              "aarch64": os.environ["HASH_AARCH64"],
+              "x86_64": os.environ["HASH_X86_64"],
+              "arm": os.environ["HASH_ARM"],
+          }
+
+          path = "smartdns/Makefile"
+          with open(path, encoding="utf-8", newline="") as fh:
+              text = fh.read()
+
+          if "\r" in text:
+              raise SystemExit("smartdns/Makefile 含 CRLF，拒绝修改")
+
+          arch = None
+          version_done = False
+          replaced = set()
+          out = []
+
+          for line in text.split("\n"):
+              stripped = line.strip()
+              match = re.match(r"(?:else )?ifeq \(\$\(ARCH\),([A-Za-z0-9_]+)\)", stripped)
+              if match:
+                  arch = match.group(1)
+              elif stripped == "else" or stripped.startswith("endif"):
+                  arch = None
+
+              if stripped.startswith("PKG_VERSION:="):
+                  line = f"PKG_VERSION:={version}"
+                  version_done = True
+              elif stripped.startswith("PKG_HASH:=") and arch in hashes:
+                  indent = line[: len(line) - len(line.lstrip())]
+                  line = f"{indent}PKG_HASH:={hashes[arch]}"
+                  replaced.add(arch)
+
+              out.append(line)
+
+          if not version_done:
+              raise SystemExit("未找到 PKG_VERSION 行")
+          if replaced != set(hashes):
+              raise SystemExit(f"PKG_HASH 替换不完整: 已替换 {sorted(replaced)}")
+
+          with open(path, "w", encoding="utf-8", newline="") as fh:
+              fh.write("\n".join(out))
+
+          print(f"PKG_VERSION -> {version}")
+          for arch in ("aarch64", "x86_64", "arm"):
+              print(f"PKG_HASH[{arch}] -> {hashes[arch]}")
+          PY
+
+      - name: Show diff
+        run: git --no-pager diff -- smartdns/Makefile
+
+      - name: Commit and push
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- smartdns/Makefile; then
+            echo "smartdns/Makefile 已是 ${VERSION}，无需提交"
+            echo "- 版本: \`${VERSION}\`（未变化，跳过提交）" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add smartdns/Makefile
+          git commit -m "smartdns: bump to ${VERSION}"
+          git push origin "HEAD:${BRANCH}"
+
+          echo "- 版本: \`${VERSION}\`，已提交并推送到 \`${BRANCH}\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Summary
+        if: always()
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          HASH_AARCH64: ${{ steps.hash.outputs.aarch64 }}
+          HASH_X86_64: ${{ steps.hash.outputs.x86_64 }}
+          HASH_ARM: ${{ steps.hash.outputs.armv7 }}
+        run: |
+          {
+            echo "## smartdns 更新"
+            echo ""
+            echo "- 上游: \`${UPSTREAM_REPO}\`"
+            echo "- 版本: \`${VERSION:-未知}\`"
+            echo "- aarch64: \`${HASH_AARCH64:-未获取}\`"
+            echo "- x86_64: \`${HASH_X86_64:-未获取}\`"
+            echo "- armv7 (arm): \`${HASH_ARM:-未获取}\`"
+          } | tee -a "$GITHUB_STEP_SUMMARY"

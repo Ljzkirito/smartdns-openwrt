@@ -11,7 +11,9 @@
 | `smartdns-ui` | Web 面板：`/usr/lib/smartdns_ui.so` 与 `/usr/share/smartdns/wwwroot` | `smartdns` |
 | `luci-app-smartdns` | LuCI 配置页面 | `smartdns`，可选 `smartdns-ui` |
 
-安装 `luci-app-smartdns` 时，`Include smartdns-ui` 选项（`PACKAGE_luci-app-smartdns_INCLUDE_smartdns_ui`，默认开启）决定是否一并安装面板。
+安装 `luci-app-smartdns` 时，`Include smartdns-ui` 选项（`PACKAGE_luci-app-smartdns_INCLUDE_smartdns_ui`，**默认关闭**）决定是否一并安装面板。
+默认只安装 DNS 服务端；需要面板时，在 menuconfig 中勾选该子选项，或在 `.config` 中写入 `CONFIG_PACKAGE_luci-app-smartdns_INCLUDE_smartdns_ui=y`（等价于直接选中 `CONFIG_PACKAGE_smartdns-ui=y`）。
+未安装面板时，LuCI 页面不会显示 Web 面板相关设置。
 若曾开启 Web 面板后又卸载 `smartdns-ui`，init 脚本会检测到插件缺失并跳过面板配置，不影响 DNS 服务启动。
 
 ## 为什么使用预构建二进制
@@ -35,7 +37,9 @@
 ln -s /path/to/smartdns-openwrt/smartdns feeds/package/smartdns
 ln -s /path/to/smartdns-openwrt/luci-app-smartdns feeds/luci/applications/luci-app-smartdns
 
-make menuconfig   # Network -> IP Addresses and Names -> smartdns / smartdns-ui
+make menuconfig   # Network -> IP Addresses and Names -> smartdns；LuCI -> Applications -> luci-app-smartdns -> Include smartdns-ui
 make package/smartdns/compile V=s
 make package/luci-app-smartdns/compile V=s
 ```
+
+`Include smartdns-ui` 默认关闭：只装服务端时无需额外操作；需要 Web 面板时，请在选择 `luci-app-smartdns` 后勾选该子选项，或直接选中 `smartdns-ui`（两者等价），否则 `smartdns-ui` 不会被编译进固件。

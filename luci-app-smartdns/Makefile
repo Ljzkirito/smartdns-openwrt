@@ -27,7 +27,7 @@ help
 
 config PACKAGE_$(PKG_NAME)_INCLUDE_smartdns_ui
 	bool "Include smartdns-ui"
-	default y
+	default n
 	help
 		Install smartdns-ui, the web dashboard bundled with smartdns.
 		Deselect to keep the DNS server without the dashboard.

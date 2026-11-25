@@ -7,18 +7,18 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=smartdns
-PKG_VERSION:=48.5.1
+PKG_VERSION:=48.5.4
 PKG_RELEASE:=1
 
 ifeq ($(ARCH),aarch64)
   PKG_ARCH:=aarch64
-  PKG_HASH:=4cef1fdc8a91c9c7fcdd499294e867ebb626bae388637de83dadbbf6c5233de5
+  PKG_HASH:=592f956ead298c85a3db8afed9480a8aba88a1f3bf5cd4ea2ac032db616fc689
 else ifeq ($(ARCH),x86_64)
   PKG_ARCH:=x86_64
-  PKG_HASH:=8b0f1956a0c92469ef9a7c60a65ee558085bc482a64d529065692d6a304315d0
+  PKG_HASH:=482e8b3ad0256460e4107245354beb826198831f28e9a6a04e1501449b542fc1
 else ifeq ($(ARCH),arm)
   PKG_ARCH:=armv7
-  PKG_HASH:=fbcb749c1b7c6399053074877cf7a8eb6c9e96f878537cc11d1f925cbdb4800a
+  PKG_HASH:=daee4430e74793c2cb24dc55503b9c153e0a389ef53818f4604cb7001026cfaf
 # Set the default value to make OpenWrt Package Checker happy
 else
   PKG_SOURCE:=dummy

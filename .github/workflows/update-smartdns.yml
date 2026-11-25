@@ -145,10 +145,23 @@ jobs:
               exit 1
             fi
 
-            tar -tzf "$file" | grep -q 'usr/sbin/smartdns' || {
-              echo "::error::$arch 资产缺少 usr/sbin/smartdns" >&2; exit 1; }
-            tar -tzf "$file" | grep -q 'usr/lib/smartdns_ui.so' || {
-              echo "::error::$arch 资产不含 Web 面板（usr/lib/smartdns_ui.so）" >&2; exit 1; }
+            list="$RUNNER_TEMP/dl/${name}.list"
+            # 先把清单完整落盘再匹配：`tar -tzf ... | grep -q` 在 `set -o pipefail` 下
+            # 会因 grep 命中后立即退出、tar 继续写管道收到 SIGPIPE(141) 而误报“缺文件”
+            if ! tar -tzf "$file" > "$list"; then
+              echo "::error::$arch 资产无法解压（tar 返回非 0）" >&2
+              exit 1
+            fi
+            if ! grep -qF -- '/usr/sbin/smartdns' "$list"; then
+              echo "::error::$arch 资产缺少 usr/sbin/smartdns" >&2
+              grep -F 'usr/sbin/' "$list" >&2 || true
+              exit 1
+            fi
+            if ! grep -qF -- '/usr/lib/smartdns_ui.so' "$list"; then
+              echo "::error::$arch 资产不含 Web 面板（usr/lib/smartdns_ui.so）" >&2
+              grep -F 'usr/lib/' "$list" >&2 || true
+              exit 1
+            fi
 
             sum="$(sha256sum "$file" | cut -d' ' -f1)"
             echo "$arch: $sum"

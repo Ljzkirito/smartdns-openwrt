@@ -35,73 +35,56 @@ const callServiceList = rpc.declare({
 });
 let pollAdded = false;
 
-function getServiceStatus() {
-	return L.resolveDefault(callServiceList(conf), {})
-		.then(function (res) {
-			let is_running = false;
-			try {
-				is_running = res[conf]['instances']['smartdns']['running'];
-			} catch (e) { }
-			return is_running;
-		});
-}
+const getServiceStatus = () => L.resolveDefault(callServiceList(conf), {})
+	.then(res => res?.[conf]?.instances?.smartdns?.running ?? false);
 
-function smartdnsServiceStatus() {
-	return Promise.all([
-		getServiceStatus(),
-		uci.unload('dhcp'),
-		uci.load('dhcp')
-	]);
-}
+const smartdnsServiceStatus = () => Promise.all([
+	getServiceStatus(),
+	uci.unload('dhcp'),
+	uci.load('dhcp')
+]);
 
-function smartdnsRenderStatus(res) {
-	let renderHTML = "";
-	let isRunning = res[0];
-
+const smartdnsRenderStatus = res => {
 	const autoSetDnsmasq = uci.get_first('smartdns', 'smartdns', 'auto_set_dnsmasq');
 	const smartdnsPort = uci.get_first('smartdns', 'smartdns', 'port');
 	const smartdnsEnable = uci.get_first('smartdns', 'smartdns', 'enabled');
-	const dnsmasqServer = uci.get_first('dhcp', 'dnsmasq', 'server');
+	const dnsmasqServer = uci.get_first('dhcp', 'dnsmasq', 'server') ?? '';
+	const uiEnable = uci.get_first('smartdns', 'smartdns', 'ui') ?? '0';
+	const uiPort = uci.get_first('smartdns', 'smartdns', 'ui_port') ?? '6080';
 
-	const uiEnable = uci.get_first('smartdns', 'smartdns', 'ui') || "0";
-	const uiPort = uci.get_first('smartdns', 'smartdns', 'ui_port') || "6080";
+	const nodes = [];
 
-	if (isRunning) {
-		renderHTML += "<span style=\"color:green;font-weight:bold\">SmartDNS - " + _("RUNNING") + "</span>";
+	if (!res[0]) {
+		nodes.push(E('span', { style: 'color:red;font-weight:bold' }, `SmartDNS - ${_('NOT RUNNING')}`));
 
-		if (uiEnable === '1') {
-			const protocol = window.location.protocol;
-			const hostname = window.location.hostname;
-			const uiLink = protocol + "//" + hostname + ":" + uiPort;
-			renderHTML += '&#160; <a class="btn cbi-button" ' +  'href="' + uiLink + '" target="_blank">' +  _("Open the WebUI") +  '</a>';
-		}
-	} else {
-		renderHTML += "<span style=\"color:red;font-weight:bold\">SmartDNS - " + _("NOT RUNNING") + "</span>";
-		if (smartdnsEnable === '1') {
-			renderHTML += "<br /><span style=\"color:red;font-weight:bold\">" + _("Please check the system logs and check if the configuration is valid.");
-			renderHTML += "</span>";
-		}
-		return renderHTML;
+		if (smartdnsEnable === '1')
+			nodes.push(E('br'), E('span', { style: 'color:red;font-weight:bold' },
+				_('Please check the system logs and check if the configuration is valid.')));
+
+		return nodes;
 	}
 
-	if (autoSetDnsmasq === '1' && smartdnsPort != '53') {
-		const matchLine = "127.0.0.1#" + smartdnsPort;
+	nodes.push(E('span', { style: 'color:green;font-weight:bold' }, `SmartDNS - ${_('RUNNING')}`));
 
-		if (dnsmasqServer == undefined || dnsmasqServer.indexOf(matchLine) < 0) {
-			renderHTML += "<br /><span style=\"color:red;font-weight:bold\">" + _("Dnsmasq Forwarded To Smartdns Failure") + "</span>";
-		}
-	}
+	if (uiEnable === '1')
+		nodes.push(' ', E('a', {
+			class: 'btn cbi-button',
+			href: `${window.location.protocol}//${window.location.hostname}:${uiPort}`,
+			target: '_blank',
+			rel: 'noopener'
+		}, _('Open the WebUI')));
 
-	return renderHTML;
-}
+	if (autoSetDnsmasq === '1' && smartdnsPort !== '53' &&
+		!dnsmasqServer.includes(`127.0.0.1#${smartdnsPort}`))
+		nodes.push(E('br'), E('span', { style: 'color:red;font-weight:bold' },
+			_('Dnsmasq Forwarded To Smartdns Failure')));
 
-function isSmartdnsUiAvailable() {
-	return fs.stat('/usr/lib/smartdns_ui.so').then(function (res) {
-		return res && res.type === 'file';
-	}).catch(function () {
-		return false;
-	});
-}
+	return nodes;
+};
+
+const isSmartdnsUiAvailable = () => fs.stat('/usr/lib/smartdns_ui.so')
+	.then(res => res?.type === 'file')
+	.catch(() => false);
 
 return view.extend({
 	load() {
@@ -124,27 +107,19 @@ return view.extend({
 
 		s = m.section(form.NamedSection, '_status');
 		s.anonymous = true;
-		s.render = function (section_id) {
-			const renderStatus = function () {
-				return L.resolveDefault(smartdnsServiceStatus()).then(function (res) {
-					const view = document.getElementById("service_status");
-					if (view == null) {
-						return;
-					}
+		s.render = () => {
+			const renderStatus = () => L.resolveDefault(smartdnsServiceStatus()).then(res => {
+				document.getElementById('service_status')
+					?.replaceChildren(...smartdnsRenderStatus(res));
+			});
 
-					view.innerHTML = smartdnsRenderStatus(res);
-				});
-			}
-
-			if (pollAdded == false) {
+			if (!pollAdded) {
 				poll.add(renderStatus, 1);
 				pollAdded = true;
 			}
 
-			return E('div', { class: 'cbi-section' }, [
-				E('div', { id: 'service_status' },
-					_('Collecting data ...'))
-			]);
+			return E('div', { class: 'cbi-section' },
+				E('div', { id: 'service_status' }, _('Collecting data ...')));
 		}
 
 		////////////////
@@ -172,7 +147,7 @@ return view.extend({
 		o = s.taboption("settings", form.Value, "server_name", _("Server Name"), _("Smartdns server name"));
 		o.placeholder = "server name";
 		o.datatype = "hostname";
-		o.rempty = true;
+		o.rmempty = true;
 
 		// Port;
 		o = s.taboption("settings", form.Value, "port", _("Local Port"),
@@ -180,7 +155,7 @@ return view.extend({
 		o.placeholder = 53;
 		o.default = 53;
 		o.datatype = "port";
-		o.rempty = false;
+		o.rmempty = false;
 
 		// auto-conf-dnsmasq;
 		o = s.taboption("settings", form.Flag, "auto_set_dnsmasq", _("Automatically Set Dnsmasq"), _("Automatically set as upstream of dnsmasq when port changes."));
@@ -196,19 +171,19 @@ return view.extend({
 			o = s.taboption("settings", form.Value, "ui_port", _("WebUI Port"), _("WebUI server port."));
 			o.placeholder = 6080;
 			o.datatype = "port";
-			o.rempty = false;
+			o.rmempty = false;
 			o.depends('ui', '1');
 
 			o = s.taboption("settings", form.Value, "ui_data_dir", _("WebUI Data Dir"), _("Directory for storing the webui database."));
 			o.placeholder = "/var/lib/smartdns";
 			o.datatype = "string";
-			o.rempty = false;
+			o.rmempty = false;
 			o.depends('ui', '1');
 
 			o = s.taboption("settings", form.Value, "ui_log_max_age", _("WebUI Log Retention"), _("Number of days to retain webui logs."));
 			o.placeholder = 30;
 			o.datatype = "uinteger";
-			o.rempty = false;
+			o.rmempty = false;
 			o.depends('ui', '1');
 		}
 
@@ -228,32 +203,32 @@ return view.extend({
 		o.value("tcp-syn:443,tcp-syn:80,ping");
 		o.value("none", _("None"));
 		o.validate = function (section_id, value) {
-			if (value == "") {
+			if (value === "") {
 				return true;
 			}
 
-			if (value == "none") {
+			if (value === "none") {
 				return true;
 			}
 
 			const check_mode = value.split(",")
-			for (let cm of check_mode) {
-				if (cm == "ping") {
+			for (const cm of check_mode) {
+				if (cm === "ping") {
 					continue;
 				}
 
-				if (cm.indexOf("tcp:") == 0) {
+				if (cm.startsWith("tcp:")) {
 					const port = cm.split(":")[1];
-					if (port == "") {
+					if (port === "") {
 						return _("TCP port is empty");
 					}
 
 					continue;
 				}
 
-				if (cm.indexOf("tcp-syn:") == 0) {
+				if (cm.startsWith("tcp-syn:")) {
 					const port = cm.split(":")[1];
-					if (port == "") {
+					if (port === "") {
 						return _("TCP SYN port is empty");
 					}
 
@@ -290,7 +265,7 @@ return view.extend({
 		o.placeholder = 853;
 		o.default = 853;
 		o.datatype = "port";
-		o.rempty = false;
+		o.rmempty = false;
 		o.depends('tls_server', '1');
 
 		// Enable DOH server;
@@ -306,26 +281,56 @@ return view.extend({
 		o.placeholder = 843;
 		o.default = 843;
 		o.datatype = "port";
-		o.rempty = false;
+		o.rmempty = false;
 		o.depends('doh_server', '1');
 
 		o = s.taboption("advanced", form.Value, "bind_cert", _("Server Cert"), _("Server certificate file path."));
 		o.datatype = "string";
 		o.placeholder = "/var/etc/smartdns/smartdns/smartdns-cert.pem"
-		o.rempty = true;
+		o.rmempty = true;
 		o.depends('tls_server', '1');
 		o.depends('doh_server', '1');
 
 		o = s.taboption("advanced", form.Value, "bind_cert_key", _("Server Cert Key"), _("Server certificate key file path."));
 		o.datatype = "string";
 		o.placeholder = "/var/etc/smartdns/smartdns/smartdns-key.pem"
-		o.rempty = false;
+		o.rmempty = false;
 		o.depends('tls_server', '1');
 		o.depends('doh_server', '1');
 
 		o = s.taboption("advanced", form.Value, "bind_cert_key_pass", _("Server Cert Key Pass"), _("Server certificate key file password."));
 		o.datatype = "string";
-		o.rempty = false;
+		o.rmempty = false;
+		o.depends('tls_server', '1');
+		o.depends('doh_server', '1');
+
+		// certificate generate;
+		o = s.taboption("advanced", form.ListValue, "bind_cert_generate", _("Generate Cert"),
+			_("Generate certificate automatically when the certificate file does not exist."));
+		o.value("", _("default"));
+		o.value("auto", _("Auto"));
+		o.value("yes", _("Yes"));
+		o.value("no", _("No"));
+		o.default = "";
+		o.rmempty = true;
+		o.depends('tls_server', '1');
+		o.depends('doh_server', '1');
+
+		// certificate san;
+		o = s.taboption("advanced", form.Value, "bind_cert_san", _("Server Cert SAN"),
+			_("Subject alternative names of the generated certificate, comma separated."));
+		o.placeholder = "smartdns.example.com";
+		o.datatype = "string";
+		o.rmempty = true;
+		o.depends('tls_server', '1');
+		o.depends('doh_server', '1');
+
+		// certificate root key;
+		o = s.taboption("advanced", form.Value, "bind_cert_root_key", _("Server Cert Root Key"),
+			_("Root key file used to sign the generated certificate."));
+		o.placeholder = "/etc/smartdns/smartdns-root-key.pem";
+		o.datatype = "string";
+		o.rmempty = true;
 		o.depends('tls_server', '1');
 		o.depends('doh_server', '1');
 
@@ -342,7 +347,7 @@ return view.extend({
 		// bind device name;
 		o = s.taboption("advanced", form.Value, "bind_device_name", _("Bind Device Name"), _("Name of device name listen on."));
 		o.placeholder = "default";
-		o.rempty = true;
+		o.rmempty = true;
 		o.datatype = "string";
 
 		// Support DualStack ip selection;
@@ -365,12 +370,20 @@ return view.extend({
 
 		// cache-size;
 		o = s.taboption("advanced", form.Value, "cache_size", _("Cache Size"), _("DNS domain result cache size"));
-		o.rempty = true;
+		o.rmempty = true;
 
 		// cache-persist;
 		o = s.taboption("advanced", form.Flag, "cache_persist", _("Cache Persist"), _("Write cache to disk on exit and load on startup."));
 		o.rmempty = false;
 		o.default = o.enabled;
+
+		// cache-file;
+		o = s.taboption("advanced", form.Value, "cache_file", _("Cache File"),
+			_("Cache persist file path, used when cache persist is enabled."));
+		o.placeholder = "/etc/smartdns/smartdns.cache";
+		o.datatype = "string";
+		o.rmempty = true;
+		o.depends("cache_persist", "1");
 
 		// resolve local hostname;
 		o = s.taboption("advanced", form.Flag, "resolve_local_hostnames", _("Resolve Local Hostnames"), _("Resolve local hostnames by reading Dnsmasq or odhcpd lease files."));
@@ -381,6 +394,18 @@ return view.extend({
 		o = s.taboption("advanced", form.Flag, "mdns_lookup", _("mDNS Lookup"), _("Resolve local network hostname via mDNS protocol."));
 		o.rmempty = true;
 		o.default = o.disabled;
+
+		// ddns domain;
+		o = s.taboption("advanced", form.Value, "ddns_domain", _("DDNS Domain"),
+			_("Domain used for DDNS record updates."));
+		o.datatype = "hostname";
+		o.rmempty = true;
+
+		// local domain;
+		o = s.taboption("advanced", form.Value, "local_domain", _("Local Domain"),
+			_("Local domain name, queries under it are treated as local."));
+		o.datatype = "hostname";
+		o.rmempty = true;
 
 		// Force AAAA SOA
 		o = s.taboption("advanced", form.Flag, "force_aaaa_soa", _("Force AAAA SOA"), _("Force AAAA SOA."));
@@ -396,15 +421,14 @@ return view.extend({
 		o = s.taboption("advanced", form.Value, "ipset_name", _("IPset Name"), _("IPset name."));
 		o.rmempty = true;
 		o.datatype = "string";
-		o.rempty = true;
 		o.validate = function (section_id, value) {
-			if (value == "") {
+			if (value === "") {
 				return true;
 			}
 
 			let ipset = value.split(",")
-			for (let i = 0; i < ipset.length; i++) {
-				if (!ipset[i].match(/^(#[4|6]:)?[a-zA-Z0-9\-_]+$/)) {
+			for (const name of ipset) {
+				if (!/^(#[4|6]:)?[a-zA-Z0-9\-_]+$/.test(name)) {
 					return _("ipset name format error, format: [#[4|6]:]ipsetname");
 				}
 			}
@@ -417,15 +441,14 @@ return view.extend({
 			_("Ipset name, Add domain result to ipset when speed check fails."));
 		o.rmempty = true;
 		o.datatype = "string";
-		o.rempty = true;
 		o.validate = function (section_id, value) {
-			if (value == "") {
+			if (value === "") {
 				return true;
 			}
 
 			const ipset = value.split(",")
-			for (let ips of ipset) {
-				if (!ips.match(/^(#[4|6]:)?[a-zA-Z0-9\-_]+$/)) {
+			for (const ips of ipset) {
+				if (!/^(#[4|6]:)?[a-zA-Z0-9\-_]+$/.test(ips)) {
 					return _("ipset name format error, format: [#[4|6]:]ipsetname");
 				}
 			}
@@ -437,15 +460,14 @@ return view.extend({
 		o = s.taboption("advanced", form.Value, "nftset_name", _("NFTset Name"), _("NFTset name, format: [#[4|6]:[family#table#set]]"));
 		o.rmempty = true;
 		o.datatype = "string";
-		o.rempty = true;
 		o.validate = function (section_id, value) {
-			if (value == "") {
+			if (value === "") {
 				return true;
 			}
 
 			const nftset = value.split(",")
-			for (let nfts of nftset) {
-				if (!nfts.match(/^#[4|6]:[a-zA-Z0-9\-_]+#[a-zA-Z0-9\-_]+#[a-zA-Z0-9\-_]+$/)) {
+			for (const nfts of nftset) {
+				if (!/^#[4|6]:[a-zA-Z0-9\-_]+#[a-zA-Z0-9\-_]+#[a-zA-Z0-9\-_]+$/.test(nfts)) {
 					return _("NFTset name format error, format: [#[4|6]:[family#table#set]]");
 				}
 			}
@@ -458,15 +480,14 @@ return view.extend({
 			_("Nftset name, Add domain result to nftset when speed check fails, format: [#[4|6]:[family#table#set]]"));
 		o.rmempty = true;
 		o.datatype = "string";
-		o.rempty = true;
 		o.validate = function (section_id, value) {
-			if (value == "") {
+			if (value === "") {
 				return true;
 			}
 
 			const nftset = value.split(",")
-			for (let nfts of nftset) {
-				if (!nfts.match(/^#[4|6]:[a-zA-Z0-9\-_]+#[a-zA-Z0-9\-_]+#[a-zA-Z0-9\-_]+$/)) {
+			for (const nfts of nftset) {
+				if (!/^#[4|6]:[a-zA-Z0-9\-_]+#[a-zA-Z0-9\-_]+#[a-zA-Z0-9\-_]+$/.test(nfts)) {
 					return _("NFTset name format error, format: [#[4|6]:[family#table#set]]");
 				}
 			}
@@ -476,12 +497,12 @@ return view.extend({
 
 		// rr-ttl;
 		o = s.taboption("advanced", form.Value, "rr_ttl", _("Domain TTL"), _("TTL for all domain result."));
-		o.rempty = true;
+		o.rmempty = true;
 
 		// rr-ttl-min;
 		o = s.taboption("advanced", form.Value, "rr_ttl_min", _("Domain TTL Min"),
 			_("Minimum TTL for all domain result."));
-		o.rempty = true;
+		o.rmempty = true;
 		o.placeholder = "600";
 		o.default = 600;
 		o.optional = true;
@@ -489,29 +510,29 @@ return view.extend({
 		// rr-ttl-max;
 		o = s.taboption("advanced", form.Value, "rr_ttl_max", _("Domain TTL Max"),
 			_("Maximum TTL for all domain result."));
-		o.rempty = true;
+		o.rmempty = true;
 
 		// rr-ttl-reply-max;
 		o = s.taboption("advanced", form.Value, "rr_ttl_reply_max", _("Reply Domain TTL Max"),
 			_("Reply maximum TTL for all domain result."));
-		o.rempty = true;
+		o.rmempty = true;
 
 		// other args
 		o = s.taboption("advanced", form.Value, "server_flags", _("Additional Server Args"),
 			_("Additional server args, refer to the help description of the bind option."))
 		o.default = ""
-		o.rempty = true
+		o.rmempty = true
 
 		// include config
 		download_files = uci.sections('smartdns', 'download-file');
 		o = s.taboption("advanced", form.DynamicList, "conf_files", _("Include Config Files<br>/etc/smartdns/conf.d"),
 			_("Include other config files from /etc/smartdns/conf.d or custom path, can be downloaded from the download page."));
-		for (let df of download_files) {
-			if (df.type == undefined) {
+		for (const df of download_files) {
+			if (df.type === undefined) {
 				continue;
 			}
 
-			if (df.type != 'config') {
+			if (df.type !== 'config') {
 				continue;
 			}
 
@@ -520,12 +541,12 @@ return view.extend({
 
 		o = s.taboption("advanced", form.DynamicList, "hosts_files", _("Hosts File"), _("Include hosts file."));
 		o.rmempty = true;
-		for (let df of download_files) {
-			if (df.type == undefined) {
+		for (const df of download_files) {
+			if (df.type === undefined) {
 				continue;
 			}
 
-			if (df.type != 'other') {
+			if (df.type !== 'other') {
 				continue;
 			}
 
@@ -539,14 +560,14 @@ return view.extend({
 		o = s.taboption("seconddns", form.Flag, "seconddns_enabled", _("Enable"),
 			_("Enable or disable second DNS server."));
 		o.default = o.disabled;
-		o.rempty = true;
+		o.rmempty = true;
 
 		// Port;
 		o = s.taboption("seconddns", form.Value, "seconddns_port", _("Local Port"), _("Smartdns local server port"));
 		o.placeholder = 6553;
 		o.default = 6553;
 		o.datatype = "port";
-		o.rempty = false;
+		o.rmempty = false;
 
 		// Enable TCP server;
 		o = s.taboption("seconddns", form.Flag, "seconddns_tcp_server", _("TCP Server"), _("Enable TCP DNS Server"));
@@ -559,7 +580,6 @@ return view.extend({
 		o.rmempty = true;
 		o.placeholder = "default";
 		o.datatype = "hostname";
-		o.rempty = true;
 
 		o = s.taboption("seconddns", form.Flag, "seconddns_no_speed_check", _("Skip Speed Check"),
 			_("Do not check speed."));
@@ -617,15 +637,14 @@ return view.extend({
 		o = s.taboption("seconddns", form.Value, "seconddns_ipset_name", _("IPset Name"), _("IPset name."));
 		o.rmempty = true;
 		o.datatype = "string";
-		o.rempty = true;
 		o.validate = function (section_id, value) {
-			if (value == "") {
+			if (value === "") {
 				return true;
 			}
 
 			const ipset = value.split(",")
-			for (let ips of ipset) {
-				if (!ips.match(/^(#[4|6]:)?[a-zA-Z0-9\-_]+$/)) {
+			for (const ips of ipset) {
+				if (!/^(#[4|6]:)?[a-zA-Z0-9\-_]+$/.test(ips)) {
 					return _("ipset name format error, format: [#[4|6]:]ipsetname");
 				}
 			}
@@ -636,15 +655,14 @@ return view.extend({
 		o = s.taboption("seconddns", form.Value, "seconddns_nftset_name", _("NFTset Name"), _("NFTset name, format: [#[4|6]:[family#table#set]]"));
 		o.rmempty = true;
 		o.datatype = "string";
-		o.rempty = true;
 		o.validate = function (section_id, value) {
-			if (value == "") {
+			if (value === "") {
 				return true;
 			}
 
 			const nftset = value.split(",")
-			for (let nfts of nftset) {
-				if (!nfts.match(/^#[4|6]:[a-zA-Z0-9\-_]+#[a-zA-Z0-9\-_]+#[a-zA-Z0-9\-_]+$/)) {
+			for (const nfts of nftset) {
+				if (!/^#[4|6]:[a-zA-Z0-9\-_]+#[a-zA-Z0-9\-_]+#[a-zA-Z0-9\-_]+$/.test(nfts)) {
 					return _("NFTset name format error, format: [#[4|6]:[family#table#set]]");
 				}
 			}
@@ -656,7 +674,7 @@ return view.extend({
 		o = s.taboption("seconddns", form.Value, "seconddns_server_flags", _("Additional Server Args"),
 			_("Additional server args, refer to the help description of the bind option."))
 		o.default = ""
-		o.rempty = true
+		o.rmempty = true
 
 		///////////////////////////////////////
 		// DNS64 Settings
@@ -664,7 +682,7 @@ return view.extend({
 		o = s.taboption("dns64", form.Value, "dns64", _("DNS64"));
 		o.placeholder = "64:ff9b::/96";
 		o.datatype = "ip6addr";
-		o.rempty = true;
+		o.rmempty = true;
 
 		///////////////////////////////////////
 		// download Files Settings
@@ -672,7 +690,6 @@ return view.extend({
 		o = s.taboption("files", form.Flag, "enable_auto_update", _("Enable Auto Update"), _("Enable daily (weekly) auto update."));
 		o.rmempty = true;
 		o.default = o.disabled;
-		o.rempty = true;
 
 		o = s.taboption("files", form.ListValue, "auto_update_week_time", _("Update Time (Every Week)"));
 		o.value('*', _('Every Day'));
@@ -696,20 +713,17 @@ return view.extend({
 			_("Upload smartdns config file to /etc/smartdns/conf.d"));
 		o.rmempty = true
 		o.datatype = "file"
-		o.rempty = true
 		o.root_directory = "/etc/smartdns/conf.d"
 
 		o = s.taboption("files", form.FileUpload, "upload_list_file", _("Upload Domain List File"),
 			_("Upload domain list file to /etc/smartdns/domain-set"));
 		o.rmempty = true
 		o.datatype = "file"
-		o.rempty = true
 		o.root_directory = "/etc/smartdns/domain-set"
 
 		o = s.taboption("files", form.FileUpload, "upload_other_file", _("Upload File"));
 		o.rmempty = true
 		o.datatype = "file"
-		o.rempty = true
 		o.root_directory = "/etc/smartdns/download"
 
 		o = s.taboption('files', form.DummyValue, "_update", _("Update Files"));
@@ -719,7 +733,7 @@ return view.extend({
 				'id': 'btn_update',
 				'click': ui.createHandlerFn(this, function () {
 					return fs.exec('/etc/init.d/smartdns', ['updatefiles'])
-						.catch(function (e) { ui.addNotification(null, E('p', e.message), 'error') });
+						.catch(e => { ui.addNotification(null, E('p', e.message), 'error') });
 				})
 			}, [_("Update")]);
 		}
@@ -741,7 +755,7 @@ return view.extend({
 		so.rmempty = true;
 		so.datatype = 'string';
 		so.validate = function (section_id, value) {
-			if (value == "") {
+			if (value === "") {
 				return true;
 			}
 
@@ -758,11 +772,17 @@ return view.extend({
 		so.value("ip-set", _("ip-set file (/etc/smartdns/ip-set)"));
 		so.value("other", _("other file (/etc/smartdns/download)"));
 		so.default = "list";
-		so.rempty = false;
+		so.rmempty = false;
 
 		so = ss.option(form.Value, 'desc', _('Description'), _('Description'));
 		so.rmempty = true;
 		so.datatype = 'string';
+
+		so = ss.option(form.Flag, 'use_proxy', _('Use Proxy'),
+			_('Download this file through the proxy server.'));
+		so.rmempty = true;
+		so.default = so.disabled;
+		so.modalonly = true;
 
 		///////////////////////////////////////
 		// Proxy server settings;
@@ -770,7 +790,7 @@ return view.extend({
 		o = s.taboption("proxy", form.Value, "proxy_server", _("Proxy Server"), _("Proxy Server URL, format: [socks5|http]://user:pass@ip:port."));
 		o.datatype = 'string';
 		o.validate = function (section_id, value) {
-			if (value == "") {
+			if (value === "") {
 				return true;
 			}
 
@@ -791,8 +811,8 @@ return view.extend({
 			return fs.trimmed('/etc/smartdns/custom.conf');
 		};
 		o.write = function (section_id, formvalue) {
-			return this.cfgvalue(section_id).then(function (value) {
-				if (value == formvalue) {
+			return this.cfgvalue(section_id).then(value => {
+				if (value === formvalue) {
 					return
 				}
 				return fs.write('/etc/smartdns/custom.conf', formvalue.trim().replace(/\r\n/g, '\n') + '\n');
@@ -840,7 +860,6 @@ return view.extend({
 		o = s.taboption("custom", form.Flag, "enable_audit_log", _("Enable Audit Log"));
 		o.rmempty = true;
 		o.default = o.disabled;
-		o.rempty = true;
 
 		o = s.taboption("custom", form.ListValue, "audit_log_output_mode", _("Audit Log Output Mode"));
 		o.rmempty = true;
@@ -895,7 +914,7 @@ return view.extend({
 		o = s.taboption("general", form.Value, "port", _("port"), _("DNS Server port"));
 		o.placeholder = "default";
 		o.datatype = "port";
-		o.rempty = true;
+		o.rmempty = true;
 		o.depends("type", "udp");
 		o.depends("type", "tcp");
 		o.depends("type", "tls");
@@ -911,18 +930,17 @@ return view.extend({
 		o.value("quic", _("quic"));
 		o.value("h3", _("h3"));
 		o.default = "udp";
-		o.rempty = false;
+		o.rmempty = false;
 
 		// server group
 		o = s.taboption("general", form.Value, "server_group", _("Server Group"), _("DNS Server group"))
 		o.rmempty = true;
 		o.placeholder = "default";
 		o.datatype = "hostname";
-		o.rempty = true;
 		servers = uci.sections('smartdns', 'server');
 		let groupnames = new Set();
-		for (let serv of servers) {
-			if (serv.server_group == undefined) {
+		for (const serv of servers) {
+			if (serv.server_group === undefined) {
 				continue;
 			}
 			groupnames.add(serv.server_group);
@@ -946,12 +964,19 @@ return view.extend({
 		o.default = o.disabled
 		o.modalonly = true;
 
+		// check edns;
+		o = s.taboption("advanced", form.Flag, "check_edns", _("Check EDNS"),
+			_("Discard the result if the EDNS record is missing."))
+		o.rmempty = true
+		o.default = o.disabled
+		o.modalonly = true;
+
 		// TLS host verify
 		o = s.taboption("advanced", form.Value, "tls_host_verify", _("TLS Hostname Verify"),
 			_("Set TLS hostname to verify."))
 		o.default = ""
 		o.datatype = "string"
-		o.rempty = true
+		o.rmempty = true
 		o.modalonly = true;
 		o.depends("type", "tls");
 		o.depends("type", "https");
@@ -974,7 +999,7 @@ return view.extend({
 			_("Sets the server name indication for query. '-' for disable SNI name."))
 		o.default = ""
 		o.datatype = "hostname"
-		o.rempty = true
+		o.rmempty = true
 		o.modalonly = true;
 		o.depends("type", "tls");
 		o.depends("type", "https");
@@ -986,7 +1011,7 @@ return view.extend({
 			_("Set the HTTP host used for the query. Use this parameter when the host of the URL address is an IP address."))
 		o.default = ""
 		o.datatype = "hostname"
-		o.rempty = true
+		o.rmempty = true
 		o.modalonly = true;
 		o.depends("type", "https");
 		o.depends("type", "h3");
@@ -997,7 +1022,7 @@ return view.extend({
 				+ "leaving blank to indicate that the validity of TLS is not verified."))
 		o.default = ""
 		o.datatype = "string"
-		o.rempty = true
+		o.rmempty = true
 		o.modalonly = true;
 		o.depends("type", "tls");
 		o.depends("type", "https");
@@ -1008,7 +1033,7 @@ return view.extend({
 		o = s.taboption("advanced", form.Value, "set_mark", _("Marking Packets"),
 			_("Set mark on packets."))
 		o.default = ""
-		o.rempty = true
+		o.rmempty = true
 		o.datatype = "uinteger"
 		o.modalonly = true;
 
@@ -1018,20 +1043,20 @@ return view.extend({
 		o.default = o.disabled
 		o.modalonly = true;
 		o.optional = true;
-		o.rempty = true;
+		o.rmempty = true;
 		o.validate = function (section_id, value) {
 			const flag = this.formvalue(section_id);
-			if (flag == "0") {
+			if (flag === "0") {
 				return true;
 			}
 
 			const proxy_server = uci.sections("smartdns", "smartdns")[0].proxy_server;
 			const server_type = this.section.formvalue(section_id, "type");
-			if (proxy_server == "" || proxy_server == undefined) {
+			if (proxy_server === "" || proxy_server === undefined) {
 				return _("Please set proxy server first.");
 			}
 
-			if ((server_type == "udp" || server_type == "quic" || server_type == "h3")
+			if ((server_type === "udp" || server_type === "quic" || server_type === "h3")
 				&& !proxy_server.match(/^(socks5):\/\//)) {
 				return _("Only socks5 proxy support UDP, QUIC and HTTP3 server.");
 			}
@@ -1050,7 +1075,7 @@ return view.extend({
 		o = s.taboption("advanced", form.Value, "addition_arg", _("Additional Server Args"),
 			_("Additional Args for upstream dns servers"))
 		o.default = ""
-		o.rempty = true
+		o.rmempty = true
 		o.modalonly = true;
 
 		////////////////
@@ -1070,11 +1095,10 @@ return view.extend({
 
 		o = s.taboption("basic", form.DynamicList, "client_addr", _("Client Address"),
 		_("If a client address is specified, only that client will apply this rule. You can enter an IP address, such as 1.2.3.4, or a MAC address, such as aa:bb:cc:dd:ee:ff."));
-		o.rempty = true
 		o.rmempty = true;
 		o.modalonly = true;
 		o.validate = function (section_id, value) {
-			if (value == "") {
+			if (value === "") {
 				return true;
 			}
 
@@ -1097,7 +1121,6 @@ return view.extend({
 			_("Upload client address file, same as Client Address function."));
 		o.rmempty = true
 		o.datatype = "file"
-		o.rempty = true
 		o.modalonly = true;
 		o.root_directory = "/etc/smartdns/ip-set"
 
@@ -1105,23 +1128,22 @@ return view.extend({
 		o.rmempty = true
 		o.placeholder = "default"
 		o.datatype = "hostname"
-		o.rempty = true
 		for (const groupname of groupnames) {
 			o.value(groupname);
 		}
 		o.validate = function (section_id, value) {
-			if (value == "") {
+			if (value === "") {
 				return true;
 			}
 
 			const val = uci.sections('smartdns', 'server');
-			for (let i of val) {
-				if (value == i.server_group) {
+			for (const i of val) {
+				if (value === i.server_group) {
 					return true;
 				}
 			}
 
-			return _('Server Group %s not exists').format(value);
+			return _('Server Group %s not exists').replace('%s', value);
 
 		}
 
@@ -1138,32 +1160,32 @@ return view.extend({
 		o.value("tcp-syn:443,tcp-syn:80,ping");
 		o.value("none", _("None"));
 		o.validate = function (section_id, value) {
-			if (value == "") {
+			if (value === "") {
 				return true;
 			}
 
-			if (value == "none") {
+			if (value === "none") {
 				return true;
 			}
 
 			const check_mode = value.split(",")
-			for (let cm of check_mode) {
-				if (cm == "ping") {
+			for (const cm of check_mode) {
+				if (cm === "ping") {
 					continue;
 				}
 
-				if (cm.indexOf("tcp:") == 0) {
+				if (cm.startsWith("tcp:")) {
 					const port = cm.split(":")[1];
-					if (port == "") {
+					if (port === "") {
 						return _("TCP port is empty");
 					}
 
 					continue;
 				}
 
-				if (cm.indexOf("tcp-syn:") == 0) {
+				if (cm.startsWith("tcp-syn:")) {
 					const port = cm.split(":")[1];
-					if (port == "") {
+					if (port === "") {
 						return _("TCP SYN port is empty");
 					}
 
@@ -1196,15 +1218,14 @@ return view.extend({
 		o = s.taboption("advanced", form.Value, "ipset_name", _("IPset Name"), _("IPset name."));
 		o.rmempty = true;
 		o.datatype = "string";
-		o.rempty = true;
 		o.validate = function (section_id, value) {
-			if (value == "") {
+			if (value === "") {
 				return true;
 			}
 
 			const ipset = value.split(",")
-			for (let ips of ipset) {
-				if (!ips.match(/^(#[4|6]:)?[a-zA-Z0-9\-_]+$/)) {
+			for (const ips of ipset) {
+				if (!/^(#[4|6]:)?[a-zA-Z0-9\-_]+$/.test(ips)) {
 					return _("ipset name format error, format: [#[4|6]:]ipsetname");
 				}
 			}
@@ -1216,15 +1237,14 @@ return view.extend({
 		o = s.taboption("advanced", form.Value, "nftset_name", _("NFTset Name"), _("NFTset name, format: [#[4|6]:[family#table#set]]"));
 		o.rmempty = true;
 		o.datatype = "string";
-		o.rempty = true;
 		o.validate = function (section_id, value) {
-			if (value == "") {
+			if (value === "") {
 				return true;
 			}
 
 			const nftset = value.split(",")
-			for (let nfts of nftset) {
-				if (!nfts.match(/^#[4|6]:[a-zA-Z0-9\-_]+#[a-zA-Z0-9\-_]+#[a-zA-Z0-9\-_]+$/)) {
+			for (const nfts of nftset) {
+				if (!/^#[4|6]:[a-zA-Z0-9\-_]+#[a-zA-Z0-9\-_]+#[a-zA-Z0-9\-_]+$/.test(nfts)) {
 					return _("NFTset name format error, format: [#[4|6]:[family#table#set]]");
 				}
 			}
@@ -1236,12 +1256,12 @@ return view.extend({
 		download_files = uci.sections('smartdns', 'download-file');
 		o = s.taboption("advanced", form.DynamicList, "conf_files", _("Include Config Files<br>/etc/smartdns/conf.d"),
 			_("Include other config files from /etc/smartdns/conf.d or custom path, can be downloaded from the download page."));
-		for (let df of download_files) {
-			if (df.type == undefined) {
+		for (const df of download_files) {
+			if (df.type === undefined) {
 				continue;
 			}
 
-			if (df.type != 'config') {
+			if (df.type !== 'config') {
 				continue;
 			}
 
@@ -1251,7 +1271,6 @@ return view.extend({
 		o = s.taboption("block", form.FileUpload, "block_domain_set_file", _("Domain List File"), _("Upload domain list file."));
 		o.rmempty = true
 		o.datatype = "file"
-		o.rempty = true
 		o.editable = true
 		o.root_directory = "/etc/smartdns/domain-set"
 
@@ -1275,23 +1294,22 @@ return view.extend({
 		o.rmempty = true
 		o.placeholder = "default"
 		o.datatype = "hostname"
-		o.rempty = true
 		for (const groupname of groupnames) {
 			o.value(groupname);
 		}
 		o.validate = function (section_id, value) {
-			if (value == "") {
+			if (value === "") {
 				return true;
 			}
 
 			const val = uci.sections('smartdns', 'server');
-			for (let v of val) {
-				if (value == v.server_group) {
+			for (const v of val) {
+				if (value === v.server_group) {
 					return true;
 				}
 			}
 
-			return _('Server Group %s not exists').format(value);
+			return _('Server Group %s not exists').replace('%s', value);
 
 		}
 
@@ -1308,32 +1326,32 @@ return view.extend({
 		o.value("tcp-syn:443,tcp-syn:80,ping");
 		o.value("none", _("None"));
 		o.validate = function (section_id, value) {
-			if (value == "") {
+			if (value === "") {
 				return true;
 			}
 
-			if (value == "none") {
+			if (value === "none") {
 				return true;
 			}
 
 			const check_mode = value.split(",")
-			for (let cm of check_mode) {
-				if (cm == "ping") {
+			for (const cm of check_mode) {
+				if (cm === "ping") {
 					continue;
 				}
 
-				if (cm.indexOf("tcp:") == 0) {
+				if (cm.startsWith("tcp:")) {
 					const port = cm.split(":")[1];
-					if (port == "") {
+					if (port === "") {
 						return _("TCP port is empty");
 					}
 
 					continue;
 				}
 
-				if (cm.indexOf("tcp-syn:") == 0) {
+				if (cm.startsWith("tcp-syn:")) {
 					const port = cm.split(":")[1];
-					if (port == "") {
+					if (port === "") {
 						return _("TCP SYN port is empty");
 					}
 
@@ -1363,15 +1381,14 @@ return view.extend({
 		o = s.taboption("forwarding", form.Value, "ipset_name", _("IPset Name"), _("IPset name."));
 		o.rmempty = true;
 		o.datatype = "string";
-		o.rempty = true;
 		o.validate = function (section_id, value) {
-			if (value == "") {
+			if (value === "") {
 				return true;
 			}
 
 			const ipset = value.split(",")
-			for (let ips of ipset) {
-				if (!ips.match(/^(#[4|6]:)?[a-zA-Z0-9\-_]+$/)) {
+			for (const ips of ipset) {
+				if (!/^(#[4|6]:)?[a-zA-Z0-9\-_]+$/.test(ips)) {
 					return _("ipset name format error, format: [#[4|6]:]ipsetname");
 				}
 			}
@@ -1382,15 +1399,14 @@ return view.extend({
 		o = s.taboption("forwarding", form.Value, "nftset_name", _("NFTset Name"), _("NFTset name, format: [#[4|6]:[family#table#set]]"));
 		o.rmempty = true;
 		o.datatype = "string";
-		o.rempty = true;
 		o.validate = function (section_id, value) {
-			if (value == "") {
+			if (value === "") {
 				return true;
 			}
 
 			const nftset = value.split(",")
-			for (let nfts of nftset) {
-				if (!nfts.match(/^#[4|6]:[a-zA-Z0-9\-_]+#[a-zA-Z0-9\-_]+#[a-zA-Z0-9\-_]+$/)) {
+			for (const nfts of nftset) {
+				if (!/^#[4|6]:[a-zA-Z0-9\-_]+#[a-zA-Z0-9\-_]+#[a-zA-Z0-9\-_]+$/.test(nfts)) {
 					return _("NFTset name format error, format: [#[4|6]:[family#table#set]]");
 				}
 			}
@@ -1402,14 +1418,13 @@ return view.extend({
 		o = s.taboption("forwarding", form.Value, "addition_flag", _("Additional Rule Flag"),
 			_("Additional Flags for rules, read help on domain-rule for more information."))
 		o.default = ""
-		o.rempty = true
+		o.rmempty = true
 		o.modalonly = true;
 
 		o = s.taboption("forwarding", form.FileUpload, "forwarding_domain_set_file", _("Domain List File"),
 			_("Upload domain list file, or configure auto download from Download File Setting page."));
 		o.rmempty = true
 		o.datatype = "file"
-		o.rempty = true
 		o.editable = true
 		o.root_directory = "/etc/smartdns/domain-set"
 
@@ -1419,13 +1434,13 @@ return view.extend({
 		o.cols = 64;
 		o.monospace = true;
 		o.cfgvalue = function (section_id) {
-			return fs.trimmed('/etc/smartdns/domain-forwarding.list').catch(function (e) {
+			return fs.trimmed('/etc/smartdns/domain-forwarding.list').catch(e => {
 				return "";
 			});
 		};
 		o.write = function (section_id, formvalue) {
-			return this.cfgvalue(section_id).then(function (value) {
-				if (value == formvalue) {
+			return this.cfgvalue(section_id).then(value => {
+				if (value === formvalue) {
 					return
 				}
 				return fs.write('/etc/smartdns/domain-forwarding.list', formvalue.trim().replace(/\r\n/g, '\n') + '\n');
@@ -1438,7 +1453,6 @@ return view.extend({
 		o = s.taboption("block", form.FileUpload, "block_domain_set_file", _("Domain List File"), _("Upload domain list file."));
 		o.rmempty = true
 		o.datatype = "file"
-		o.rempty = true
 		o.editable = true
 		o.root_directory = "/etc/smartdns/domain-set"
 
@@ -1447,13 +1461,13 @@ return view.extend({
 		o.rows = 10;
 		o.cols = 64;
 		o.cfgvalue = function (section_id) {
-			return fs.trimmed('/etc/smartdns/domain-block.list').catch(function (e) {
+			return fs.trimmed('/etc/smartdns/domain-block.list').catch(e => {
 				return "";
 			});
 		};
 		o.write = function (section_id, formvalue) {
-			return this.cfgvalue(section_id).then(function (value) {
-				if (value == formvalue) {
+			return this.cfgvalue(section_id).then(value => {
+				if (value === formvalue) {
 					return
 				}
 				return fs.write('/etc/smartdns/domain-block.list', formvalue.trim().replace(/\r\n/g, '\n') + '\n');
@@ -1485,23 +1499,22 @@ return view.extend({
 		so.rmempty = true
 		so.placeholder = "default"
 		so.datatype = "hostname"
-		so.rempty = true
 		for (const groupname of groupnames) {
 			so.value(groupname);
 		}
 		so.validate = function (section_id, value) {
-			if (value == "") {
+			if (value === "") {
 				return true;
 			}
 
 			const val = uci.sections('smartdns', 'server');
-			for (let v of val) {
-				if (value == v.server_group) {
+			for (const v of val) {
+				if (value === v.server_group) {
 					return true;
 				}
 			}
 
-			return _('Server Group %s not exists').format(value);
+			return _('Server Group %s not exists').replace('%s', value);
 
 		}
 
@@ -1509,7 +1522,6 @@ return view.extend({
 			_("Upload domain list file, or configure auto download from Download File Setting page."));
 		so.rmempty = true
 		so.datatype = "file"
-		so.rempty = true
 		so.root_directory = "/etc/smartdns/domain-set"
 
 		so = ss.option(form.ListValue, "block_domain_type", _("Block domain"), _("Block domain."));
@@ -1543,32 +1555,32 @@ return view.extend({
 		so.value("tcp-syn:443,tcp-syn:80,ping");
 		so.value("none", _("None"));
 		so.validate = function (section_id, value) {
-			if (value == "") {
+			if (value === "") {
 				return true;
 			}
 
-			if (value == "none") {
+			if (value === "none") {
 				return true;
 			}
 
 			const check_mode = value.split(",")
-			for (let cm of check_mode) {
-				if (cm == "ping") {
+			for (const cm of check_mode) {
+				if (cm === "ping") {
 					continue;
 				}
 
-				if (cm.indexOf("tcp:") == 0) {
+				if (cm.startsWith("tcp:")) {
 					const port = cm.split(":")[1];
-					if (port == "") {
+					if (port === "") {
 						return _("TCP port is empty");
 					}
 
 					continue;
 				}
 
-				if (cm.indexOf("tcp-syn:") == 0) {
+				if (cm.startsWith("tcp-syn:")) {
 					const port = cm.split(":")[1];
-					if (port == "") {
+					if (port === "") {
 						return _("TCP SYN port is empty");
 					}
 
@@ -1590,22 +1602,20 @@ return view.extend({
 		so = ss.option(form.Value, "ipset_name", _("IPset Name"), _("IPset name."));
 		so.rmempty = true;
 		so.datatype = "hostname";
-		so.rempty = true;
 		so.modalonly = true;
 
 		so = ss.option(form.Value, "nftset_name", _("NFTset Name"), _("NFTset name, format: [#[4|6]:[family#table#set]]"));
 		so.rmempty = true;
 		so.datatype = "string";
-		so.rempty = true;
 		so.modalonly = true;
 		so.validate = function (section_id, value) {
-			if (value == "") {
+			if (value === "") {
 				return true;
 			}
 
 			const nftset = value.split(",")
-			for (let nfts of nftset) {
-				if (!nfts.match(/#[4|6]:[a-zA-Z0-9\-_]+#[a-zA-Z0-9\-_]+#[a-zA-Z0-9\-_]+$/)) {
+			for (const nfts of nftset) {
+				if (!/#[4|6]:[a-zA-Z0-9\-_]+#[a-zA-Z0-9\-_]+#[a-zA-Z0-9\-_]+$/.test(nfts)) {
 					return _("NFTset name format error, format: [#[4|6]:[family#table#set]]");
 				}
 			}
@@ -1617,7 +1627,7 @@ return view.extend({
 		so = ss.option(form.Value, "addition_flag", _("Additional Rule Flag"),
 			_("Additional Flags for rules, read help on domain-rule for more information."))
 		so.default = ""
-		so.rempty = true
+		so.rmempty = true
 		so.modalonly = true;
 
 		///////////////////////////////////////
@@ -1632,8 +1642,8 @@ return view.extend({
 			return fs.trimmed('/etc/smartdns/address.conf');
 		};
 		o.write = function (section_id, formvalue) {
-			return this.cfgvalue(section_id).then(function (value) {
-				if (value == formvalue) {
+			return this.cfgvalue(section_id).then(value => {
+				if (value === formvalue) {
 					return
 				}
 				return fs.write('/etc/smartdns/address.conf', formvalue.trim().replace(/\r\n/g, '\n') + '\n');
@@ -1714,7 +1724,7 @@ return view.extend({
 		so = ss.option(form.Value, "addition_flag", _("Additional Rule Flag"),
 			_("Additional Flags for rules, read help on ip-rule for more information."))
 		so.default = ""
-		so.rempty = true
+		so.rmempty = true
 		so.modalonly = true;
 		///////////////////////////////////////
 		// IP Blacklist;
@@ -1727,8 +1737,8 @@ return view.extend({
 			return fs.trimmed('/etc/smartdns/blacklist-ip.conf');
 		};
 		o.write = function (section_id, formvalue) {
-			return this.cfgvalue(section_id).then(function (value) {
-				if (value == formvalue) {
+			return this.cfgvalue(section_id).then(value => {
+				if (value === formvalue) {
 					return
 				}
 				return fs.write('/etc/smartdns/blacklist-ip.conf', formvalue.trim().replace(/\r\n/g, '\n') + '\n');
@@ -1746,24 +1756,24 @@ return view.extend({
 		o.title = _("SmartDNS official website");
 		o.inputtitle = _("open website");
 		o.inputstyle = "apply";
-		o.onclick = function () {
-			window.open("https://pymumu.github.io/smartdns", '_blank');
+		o.onclick = () => {
+			window.open("https://pymumu.github.io/smartdns", '_blank', 'noopener');
 		};
 
 		o = s.option(form.Button, "report");
 		o.title = _("Report bugs");
 		o.inputtitle = _("Report bugs");
 		o.inputstyle = "apply";
-		o.onclick = function () {
-			window.open("https://github.com/pymumu/smartdns/issues", '_blank');
+		o.onclick = () => {
+			window.open("https://github.com/pymumu/smartdns/issues", '_blank', 'noopener');
 		};
 
 		o = s.option(form.Button, "Donate");
 		o.title = _("Donate to smartdns");
 		o.inputtitle = _("Donate");
 		o.inputstyle = "apply";
-		o.onclick = function () {
-			window.open("https://pymumu.github.io/smartdns/#donate", '_blank');
+		o.onclick = () => {
+			window.open("https://pymumu.github.io/smartdns/#donate", '_blank', 'noopener');
 		};
 
 		o = s.option(form.DummyValue, "_restart", _("Restart Service"));
@@ -1773,7 +1783,7 @@ return view.extend({
 				'id': 'btn_restart',
 				'click': ui.createHandlerFn(this, function () {
 					return fs.exec('/etc/init.d/smartdns', ['restart'])
-						.catch(function (e) { ui.addNotification(null, E('p', e.message), 'error') });
+						.catch(e => { ui.addNotification(null, E('p', e.message), 'error') });
 				})
 			}, [_("Restart")]);
 		}

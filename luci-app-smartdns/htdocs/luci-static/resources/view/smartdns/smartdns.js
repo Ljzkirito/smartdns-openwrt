@@ -44,7 +44,7 @@ const smartdnsServiceStatus = () => Promise.all([
 	uci.load('dhcp')
 ]);
 
-const smartdnsRenderStatus = res => {
+const smartdnsRenderStatus = (res, hasUi) => {
 	const autoSetDnsmasq = uci.get_first('smartdns', 'smartdns', 'auto_set_dnsmasq');
 	const smartdnsPort = uci.get_first('smartdns', 'smartdns', 'port');
 	const smartdnsEnable = uci.get_first('smartdns', 'smartdns', 'enabled');
@@ -66,7 +66,7 @@ const smartdnsRenderStatus = res => {
 
 	nodes.push(E('span', { style: 'color:green;font-weight:bold' }, `SmartDNS - ${_('RUNNING')}`));
 
-	if (uiEnable === '1')
+	if (uiEnable === '1' && hasUi)
 		nodes.push(' ', E('a', {
 			class: 'btn cbi-button',
 			href: `${window.location.protocol}//${window.location.hostname}:${uiPort}`,
@@ -110,7 +110,7 @@ return view.extend({
 		s.render = () => {
 			const renderStatus = () => L.resolveDefault(smartdnsServiceStatus()).then(res => {
 				document.getElementById('service_status')
-					?.replaceChildren(...smartdnsRenderStatus(res));
+					?.replaceChildren(...smartdnsRenderStatus(res, hasUi));
 			});
 
 			if (!pollAdded) {
@@ -163,7 +163,7 @@ return view.extend({
 		o.default = o.enabled;
 
 		//WebUI
-		if (hasUi) {
+		if (hasUi || uci.get_first('smartdns', 'smartdns', 'ui') === '1') {
 			o = s.taboption("settings", form.Flag, "ui", _("Enable WebUI"), _("Enable or disable smartdns webui plugin."));
 			o.rmempty = false;
 			o.default = o.disabled;
@@ -171,19 +171,19 @@ return view.extend({
 			o = s.taboption("settings", form.Value, "ui_port", _("WebUI Port"), _("WebUI server port."));
 			o.placeholder = 6080;
 			o.datatype = "port";
-			o.rmempty = false;
+			o.rmempty = true;
 			o.depends('ui', '1');
 
 			o = s.taboption("settings", form.Value, "ui_data_dir", _("WebUI Data Dir"), _("Directory for storing the webui database."));
 			o.placeholder = "/var/lib/smartdns";
 			o.datatype = "string";
-			o.rmempty = false;
+			o.rmempty = true;
 			o.depends('ui', '1');
 
 			o = s.taboption("settings", form.Value, "ui_log_max_age", _("WebUI Log Retention"), _("Number of days to retain webui logs."));
 			o.placeholder = 30;
 			o.datatype = "uinteger";
-			o.rmempty = false;
+			o.rmempty = true;
 			o.depends('ui', '1');
 		}
 
@@ -294,13 +294,13 @@ return view.extend({
 		o = s.taboption("advanced", form.Value, "bind_cert_key", _("Server Cert Key"), _("Server certificate key file path."));
 		o.datatype = "string";
 		o.placeholder = "/var/etc/smartdns/smartdns/smartdns-key.pem"
-		o.rmempty = false;
+		o.rmempty = true;
 		o.depends('tls_server', '1');
 		o.depends('doh_server', '1');
 
 		o = s.taboption("advanced", form.Value, "bind_cert_key_pass", _("Server Cert Key Pass"), _("Server certificate key file password."));
 		o.datatype = "string";
-		o.rmempty = false;
+		o.rmempty = true;
 		o.depends('tls_server', '1');
 		o.depends('doh_server', '1');
 
@@ -998,7 +998,7 @@ return view.extend({
 		o = s.taboption("advanced", form.Value, "host_name", _("TLS SNI name"),
 			_("Sets the server name indication for query. '-' for disable SNI name."))
 		o.default = ""
-		o.datatype = "hostname"
+		o.datatype = "string"
 		o.rmempty = true
 		o.modalonly = true;
 		o.depends("type", "tls");
@@ -1050,7 +1050,7 @@ return view.extend({
 				return true;
 			}
 
-			const proxy_server = uci.sections("smartdns", "smartdns")[0].proxy_server;
+			const proxy_server = uci.sections("smartdns", "smartdns")[0]?.proxy_server;
 			const server_type = this.section.formvalue(section_id, "type");
 			if (proxy_server === "" || proxy_server === undefined) {
 				return _("Please set proxy server first.");
@@ -1601,7 +1601,21 @@ return view.extend({
 
 		so = ss.option(form.Value, "ipset_name", _("IPset Name"), _("IPset name."));
 		so.rmempty = true;
-		so.datatype = "hostname";
+		so.datatype = "string";
+		so.validate = function (section_id, value) {
+			if (value === "") {
+				return true;
+			}
+
+			const ipset = value.split(",")
+			for (const ips of ipset) {
+				if (!/^(#[4|6]:)?[a-zA-Z0-9\-_]+$/.test(ips)) {
+					return _("ipset name format error, format: [#[4|6]:]ipsetname");
+				}
+			}
+
+			return true;
+		}
 		so.modalonly = true;
 
 		so = ss.option(form.Value, "nftset_name", _("NFTset Name"), _("NFTset name, format: [#[4|6]:[family#table#set]]"));

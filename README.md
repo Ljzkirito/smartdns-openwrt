@@ -7,7 +7,8 @@
 
 | 软件包 | 内容 | 依赖 |
 | --- | --- | --- |
-| `smartdns` | `/usr/sbin/smartdns`、init 脚本、`/etc/config/smartdns` 与默认配置、OpenSSL 3.x 运行库 | `libc`、`libpthread`、`zlib` |
+| `smartdns` | `/usr/sbin/smartdns`、init 脚本、`/etc/config/smartdns` 与默认配置 | `libc`、`libpthread`、`zlib`；系统 OpenSSL < 3.3 时加 `smartdns-openssl`，≥ 3.3 时加 `libopenssl` |
+| `smartdns-openssl` | OpenSSL 3 运行库：`/usr/lib/smartdns/libssl.so.3`、`libcrypto.so.3`（隐藏包，系统 OpenSSL < 3.3 时安装） | `libc` |
 | `WebUI` | Web 面板：`/usr/lib/smartdns_ui.so` 与 `/usr/share/smartdns/wwwroot` | `smartdns` |
 | `luci-app-smartdns` | LuCI 配置页面 | `smartdns`，可选 `WebUI` |
 
@@ -18,9 +19,10 @@
 
 ## 为什么使用预构建二进制
 
-本仓库直接使用 [PikuZheng/smartdns](https://github.com/PikuZheng/smartdns) 发布的 `smartdns_with_ui` 预构建包，其中已包含 **OpenSSL 3.5.8 (LTS)** 与 **smartdns-ui**。原因如下：
+本仓库直接使用 [PikuZheng/smartdns](https://github.com/PikuZheng/smartdns) 发布的 `smartdns_with_ui` 预构建包，其中已包含 **OpenSSL 3.5.9 (LTS)** 与 **smartdns-ui**。原因如下：
 
-- **OpenSSL 版本**：OpenWrt 21.02 自带的 OpenSSL 为 1.1.1，缺少 QUIC / HTTP3 所需的 TLS 接口，因此 **不支持 DoQ / DoH3**。预构建包内置 OpenSSL 3.5.8 LTS，并以 `/usr/lib/smartdns/` 下的独立库文件提供，不再依赖系统 OpenSSL，从而补齐 DoQ / DoH3 支持。
+- **OpenSSL 版本**：OpenWrt 21.02 / 22.03 自带的 OpenSSL 为 1.1.1，缺少 QUIC / HTTP3 所需的 TLS 接口，因此 **不支持 DoQ / DoH3**；预构建包内置 OpenSSL 3.5.9 LTS，从而补齐 DoQ / DoH3 支持。
+- **运行库安装策略**：预构建二进制导入了带 `OPENSSL_3.2.0` / `OPENSSL_3.3.0` 版本标记的符号，因此只有系统 OpenSSL ≥ 3.3 时才能直接复用系统库（目前仅 main/SNAPSHOT 的 3.5.x 满足）。21.02（1.1.1）、22.03（1.1.1）、23.05（3.0.19）、24.10（3.0.22）都由隐藏包 `smartdns-openssl` 把两个库安装到 `/usr/lib/smartdns/`。init 脚本启动时设置 `LD_LIBRARY_PATH=/usr/lib/smartdns:/usr/lib:/lib`，因此两种情况都能正确加载。
 - **Rust 工具链**：`smartdns-ui` 由 Rust 编写，而 OpenWrt 21.02 的软件源中没有 Rust，无法在 21.02 上现场编译面板，只能使用预构建产物。
 
 只能覆盖官方提供预构建的架构：`aarch64`、`arm`（armv7）、`x86_64`。
@@ -28,7 +30,7 @@
 ## 升级版本
 
 修改 `smartdns/Makefile` 中的 `PKG_VERSION`，并按架构更新 `PKG_HASH`（对应 release 资产 `smartdns_with_ui.1.2026.v<版本>.<架构>.tar.gz`）。
-两个软件包共用同一压缩包，版本与哈希只需维护一处。
+三个软件包共用同一压缩包，版本与哈希只需维护一处。
 
 ## 构建
 

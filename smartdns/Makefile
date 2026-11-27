@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=smartdns
 PKG_VERSION:=48.5.4
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 ifeq ($(ARCH),aarch64)
   PKG_ARCH:=aarch64
@@ -36,13 +36,27 @@ include $(INCLUDE_DIR)/package.mk
 
 TAR_CMD:=$(HOST_TAR) -C $(PKG_BUILD_DIR) $(TAR_OPTIONS)
 
+# The prebuilt binary imports OPENSSL_3.2.0 / OPENSSL_3.3.0 versioned symbols,
+# so it can only use the system OpenSSL when that is >= 3.3 (currently the
+# main/SNAPSHOT tree ships 3.5.x). 23.05 (3.0.19) and 24.10 (3.0.22) still
+# provide OpenSSL 3.0, therefore they keep the bundled runtime libraries.
+SMARTDNS_SYSTEM_OPENSSL:=$(shell sed -n 's/^PKG_VERSION:=\([0-9][0-9.]*\).*/\1/p' $(TOPDIR)/package/libs/openssl/Makefile 2>/dev/null | head -n1)
+SMARTDNS_OPENSSL_MAJOR:=$(word 1,$(subst ., ,$(SMARTDNS_SYSTEM_OPENSSL)))
+SMARTDNS_OPENSSL_MINOR:=$(word 2,$(subst ., ,$(SMARTDNS_SYSTEM_OPENSSL)))
+SMARTDNS_USE_SYSTEM_OPENSSL:=$(shell [ "$(SMARTDNS_OPENSSL_MAJOR)" = 3 ] && [ "$(SMARTDNS_OPENSSL_MINOR)" -ge 3 ] 2>/dev/null && echo 1)
+ifeq ($(SMARTDNS_USE_SYSTEM_OPENSSL),1)
+  SMARTDNS_OPENSSL_DEP:=+libopenssl
+else
+  SMARTDNS_OPENSSL_DEP:=+smartdns-openssl
+endif
+
 define Package/smartdns
   SECTION:=net
   CATEGORY:=Network
   SUBMENU:=IP Addresses and Names
   URL:=https://www.github.com/pymumu/smartdns/
   TITLE:=smartdns server
-  DEPENDS:=@(aarch64||arm||x86_64) +libc +libpthread +zlib
+  DEPENDS:=@(aarch64||arm||x86_64) +libc +libpthread +zlib $(SMARTDNS_OPENSSL_DEP)
 endef
 
 define Package/smartdns/description
@@ -73,6 +87,20 @@ define Package/smartdns-ui/description
 A dashboard ui for smartdns server.
 endef
 
+define Package/smartdns-openssl
+  SECTION:=libs
+  CATEGORY:=Libraries
+  URL:=https://www.github.com/pymumu/smartdns/
+  TITLE:=Bundled OpenSSL 3 runtime for smartdns
+  DEPENDS:=@(aarch64||arm||x86_64)
+  HIDDEN:=1
+endef
+
+define Package/smartdns-openssl/description
+Bundled libssl/libcrypto of OpenSSL 3 for the prebuilt smartdns binary.
+Installed when the system OpenSSL is older than 3.3.
+endef
+
 define Build/Compile
 endef
 
@@ -87,6 +115,9 @@ define Package/smartdns/install
 	$(INSTALL_DIR) $(1)/etc/smartdns/{conf.d,data,domain-set,ip-set,download}
 	$(INSTALL_CONF) $(CURDIR)/files/smartdns/*.conf $(1)/etc/smartdns/
 	$(INSTALL_CONF) $(CURDIR)/files/smartdns/*.list $(1)/etc/smartdns/
+endef
+
+define Package/smartdns-openssl/install
 	$(INSTALL_DIR) $(1)/usr/lib/smartdns
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/tmp/smartdns-openwrt/root/usr/lib/smartdns/libcrypto.so.3 $(1)/usr/lib/smartdns/
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/tmp/smartdns-openwrt/root/usr/lib/smartdns/libssl.so.3 $(1)/usr/lib/smartdns/
@@ -101,3 +132,4 @@ endef
 
 $(eval $(call BuildPackage,smartdns))
 $(eval $(call BuildPackage,smartdns-ui))
+$(eval $(call BuildPackage,smartdns-openssl))

@@ -20,7 +20,7 @@ STOP=82
 NAME=smartdns-lite
 USE_PROCD=1
 
-SMARTDNS_CONF_DIR="/etc/smartdns"
+SMARTDNS_CONF_DIR="/etc/smartdns-lite"
 CUSTOM_CONF="${SMARTDNS_CONF_DIR}/custom.conf"
 SMARTDNS_VAR_CONF_DIR="/var/etc/smartdns"
 SMARTDNS_CONF="${SMARTDNS_VAR_CONF_DIR}/smartdns-lite.conf"

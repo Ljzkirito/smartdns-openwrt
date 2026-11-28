@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=smartdns
 PKG_VERSION:=48.5.4
-PKG_RELEASE:=3
+PKG_RELEASE:=6
 
 ifeq ($(ARCH),aarch64)
   PKG_ARCH:=aarch64
@@ -65,15 +65,6 @@ gets DNS query results from multiple upstream DNS servers concurrently, and retu
 Unlike dnsmasq's all-servers, smartdns returns the fastest IP, and encrypt DNS queries with DoT or DoH. 
 endef
 
-define Package/smartdns/conffiles
-/etc/config/smartdns
-/etc/smartdns/address.conf
-/etc/smartdns/blacklist-ip.conf
-/etc/smartdns/custom.conf
-/etc/smartdns/domain-block.list
-/etc/smartdns/domain-forwarding.list
-endef
-
 define Package/smartdns-ui
   SECTION:=net
   CATEGORY:=Network
@@ -107,14 +98,6 @@ endef
 define Package/smartdns/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/tmp/smartdns-openwrt/root/usr/sbin/smartdns $(1)/usr/sbin/
-	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) $(CURDIR)/files/init.d/smartdns $(1)/etc/init.d/
-	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_CONF) $(CURDIR)/files/config/smartdns $(1)/etc/config/
-	$(INSTALL_DIR) $(1)/etc/smartdns
-	$(INSTALL_DIR) $(1)/etc/smartdns/{conf.d,data,domain-set,ip-set,download}
-	$(INSTALL_CONF) $(CURDIR)/files/smartdns/*.conf $(1)/etc/smartdns/
-	$(INSTALL_CONF) $(CURDIR)/files/smartdns/*.list $(1)/etc/smartdns/
 endef
 
 define Package/smartdns-openssl/install

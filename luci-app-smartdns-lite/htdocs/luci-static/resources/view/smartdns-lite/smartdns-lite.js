@@ -171,7 +171,7 @@ return view.extend({
 		o.rmempty = true;
 		o.datatype = 'file';
 		o.editable = true;
-		o.root_directory = '/etc/smartdns/domain-set';
+		o.root_directory = '/etc/smartdns-lite/domain-set';
 
 		o = s.taboption('settings', form.ListValue, 'server_mode', _('DNS Server Mode'),
 			_('Smartdns server mode.'));
@@ -217,7 +217,7 @@ return view.extend({
 		o.rmempty = true;
 		o.datatype = 'file';
 		o.editable = true;
-		o.root_directory = '/etc/smartdns/ip-set';
+		o.root_directory = '/etc/smartdns-lite/ip-set';
 
 		o = s.taboption('parental', form.DynamicList, 'pc_servers', _('Parental Control Upstream Server'),
 			_('Upstream server with parental control feature. If not specified, the default server will be used.'));
@@ -229,7 +229,7 @@ return view.extend({
 		o.rmempty = true;
 		o.datatype = 'file';
 		o.editable = true;
-		o.root_directory = '/etc/smartdns/domain-set';
+		o.root_directory = '/etc/smartdns-lite/domain-set';
 
 		///////////////////////////////////////
 		// Domain Rules Settings
@@ -244,7 +244,7 @@ return view.extend({
 		o.rmempty = true;
 		o.datatype = 'file';
 		o.editable = true;
-		o.root_directory = '/etc/smartdns/domain-set';
+		o.root_directory = '/etc/smartdns-lite/domain-set';
 
 		o = s.taboption('rules', form.DynamicList, 'rules_servers', _('Upstream Server'),
 			_('Upstream server for specific domain. If not specified, the default server will be used.'));
@@ -356,7 +356,7 @@ return view.extend({
 		o.rmempty = true;
 		o.datatype = 'file';
 		o.modalonly = true;
-		o.root_directory = '/etc/smartdns/ip-set';
+		o.root_directory = '/etc/smartdns-lite/ip-set';
 
 		o = s.taboption('cloudflare', form.DynamicList, 'cloudflare_ip_alias', _('IP alias'),
 			_('IP Address Mapping, mapping all CloudFlare CDN IPs to the specified IP, can be used to accelerate CloudFlare\'s CDN websites.'));
@@ -370,13 +370,13 @@ return view.extend({
 		o = s.taboption('custom', form.TextValue, 'custom_conf',
 			'', _('smartdns custom settings'));
 		o.rows = 20;
-		o.cfgvalue = section_id => fs.trimmed('/etc/smartdns/custom.conf');
+		o.cfgvalue = section_id => fs.trimmed('/etc/smartdns-lite/custom.conf');
 		o.write = function (section_id, formvalue) {
 			return this.cfgvalue(section_id).then(value => {
 				if (value === formvalue)
 					return;
 
-				return fs.write('/etc/smartdns/custom.conf',
+				return fs.write('/etc/smartdns-lite/custom.conf',
 					`${formvalue.trim().replace(/\r\n/g, '\n')}\n`);
 			});
 		};

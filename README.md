@@ -7,11 +7,13 @@
 
 | 软件包 | 内容 | 依赖 |
 | --- | --- | --- |
-| `smartdns` | `/usr/sbin/smartdns`、init 脚本、`/etc/config/smartdns` 与默认配置 | `libc`、`libpthread`、`zlib`；系统 OpenSSL < 3.3 时加 `smartdns-openssl`，≥ 3.3 时加 `libopenssl` |
-| `smartdns-openssl` | OpenSSL 3 运行库：`/usr/lib/smartdns/libssl.so.3`、`libcrypto.so.3`（隐藏包，系统 OpenSSL < 3.3 时安装） | `libc` |
+| `smartdns` | 主程序 `/usr/sbin/smartdns`（不含 UCI 配置、init 脚本与数据文件） | `libc`、`libpthread`、`zlib`；系统 OpenSSL < 3.3 时加 `smartdns-openssl`，≥ 3.3 时加 `libopenssl` |
+| `smartdns-openssl` | OpenSSL 3 运行库：`/usr/lib/smartdns/libssl.so.3`、`libcrypto.so.3`（隐藏包，系统 OpenSSL < 3.3 时安装） | 仅 `aarch64`、`arm`、`x86_64` |
 | `WebUI` | Web 面板：`/usr/lib/smartdns_ui.so` 与 `/usr/share/smartdns/wwwroot` | `smartdns` |
-| `luci-app-smartdns` | LuCI 配置页面 | `smartdns`，可选 `WebUI` |
-| `luci-app-smartdns-lite` | 精简版 LuCI 配置页面（独立的 `smartdns` 实例） | `smartdns` |
+| `luci-app-smartdns` | LuCI 配置页面、`/etc/config/smartdns`、`/etc/init.d/smartdns`、`/etc/smartdns` 预设数据文件（`address.conf`、`blacklist-ip.conf`、`domain-block.list`、`domain-forwarding.list`、`smartdns.conf`） | `smartdns`，可选 `WebUI` |
+| `luci-app-smartdns-lite` | 精简版 LuCI 配置页面、`/etc/config/smartdns-lite`、`/etc/init.d/smartdns-lite`、`/etc/smartdns-lite` 数据目录（独立的 `smartdns` 实例） | `smartdns` |
+
+UCI 配置、init 脚本与数据目录分别由两个 LuCI 应用携带，互不共用：完整版使用 `/etc/config/smartdns` + `/etc/init.d/smartdns` + `/etc/smartdns`，精简版使用 `/etc/config/smartdns-lite` + `/etc/init.d/smartdns-lite` + `/etc/smartdns-lite`；`smartdns` 包只提供二进制（以及可选的 WebUI、OpenSSL 运行库）。
 
 安装 `luci-app-smartdns` 时，`Include WebUI` 选项（`PACKAGE_luci-app-smartdns_INCLUDE_WebUI`，**默认关闭**）决定是否一并安装面板。
 默认只安装 DNS 服务端；需要面板时，在 menuconfig 中勾选该子选项，或在 `.config` 中写入 `CONFIG_PACKAGE_luci-app-smartdns_INCLUDE_WebUI=y`（等价于直接选中 `CONFIG_PACKAGE_smartdns-ui=y`）。
@@ -22,7 +24,7 @@
 
 `luci-app-smartdns-lite` 是面向“只做国内分流 / 分流域名”场景的精简配置页面，与 `luci-app-smartdns` 互不冲突，可同时安装。
 
-它使用 `smartdns` 包中的二进制，但拥有独立的配置与实例：页面设置会生成完整的 `/var/etc/smartdns/smartdns-lite.conf`，由 `/etc/init.d/smartdns-lite` 通过 procd 以 `smartdns -f -c` 启动，不再读写 `smartdns` 的 UCI 配置，也不调用 `/etc/init.d/smartdns`。因此：
+它使用 `smartdns` 包中的二进制，但拥有独立的配置、数据目录与实例：页面设置会生成完整的 `/var/etc/smartdns/smartdns-lite.conf`，由 `/etc/init.d/smartdns-lite` 通过 procd 以 `smartdns -f -c` 启动，并只读写自己的 `/etc/smartdns-lite`（`custom.conf`、`domain-set/`、`ip-set/`），不读写 `smartdns` 的 UCI 配置，也不调用 `/etc/init.d/smartdns`。因此：
 
 - 必须先安装 `smartdns` 服务端包（本包依赖已声明），但无需启用 `smartdns` 服务；
 - 页面状态栏展示的是 `smartdns-lite` 实例的运行状态；
@@ -43,6 +45,10 @@
 
 修改 `smartdns/Makefile` 中的 `PKG_VERSION`，并按架构更新 `PKG_HASH`（对应 release 资产 `smartdns_with_ui.1.2026.v<版本>.<架构>.tar.gz`）。
 三个软件包共用同一压缩包，版本与哈希只需维护一处。
+
+从旧版本升级时，`/etc/config/smartdns`、`/etc/init.d/smartdns` 以及 `/etc/smartdns` 下全部数据文件（含 `custom.conf`）的所有权从 `smartdns` 迁移到 `luci-app-smartdns`。请先升级 `smartdns`、再升级 `luci-app-smartdns`（`opkg upgrade smartdns luci-app-smartdns` 即按此顺序执行），否则旧版 `smartdns` 仍占用这些文件，opkg 会报文件冲突。已有配置文件会保留。
+
+精简版此前也使用 `/etc/smartdns`，升级后改为独立的 `/etc/smartdns-lite`；旧目录中的 `custom.conf` 内容与上传文件不会自动迁移（该目录现归完整版所有），如需保留请手动复制到 `/etc/smartdns-lite/`。
 
 ## 构建
 

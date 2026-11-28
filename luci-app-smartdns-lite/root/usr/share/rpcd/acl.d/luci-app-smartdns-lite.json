@@ -4,7 +4,7 @@
 		"read": {
 			"cgi-io": [ "exec" ],
 			"file": {
-				"/etc/smartdns/*": [ "read" ]
+				"/etc/smartdns-lite/*": [ "read" ]
 			},
 			"ubus": {
 				"service": [ "list" ]
@@ -13,7 +13,7 @@
 		},
 		"write": {
 			"file": {
-				"/etc/smartdns/*": [ "write" ],
+				"/etc/smartdns-lite/*": [ "write" ],
 				"/etc/init.d/smartdns-lite restart": [ "exec" ]
 			},
 			"uci": [ "smartdns-lite" ]

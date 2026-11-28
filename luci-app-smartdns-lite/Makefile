@@ -6,7 +6,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-smartdns-lite
 PKG_VERSION:=1.2025.47.2
-PKG_RELEASE:=1
+PKG_RELEASE:=3
 
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Nick Peng <pymumu@gmail.com>
@@ -23,18 +23,20 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)/conffiles
 /etc/config/smartdns-lite
+/etc/smartdns-lite/custom.conf
 endef
 
 define Package/$(PKG_NAME)/postinst
 #!/bin/sh
 [ -n "$${IPKG_INSTROOT}" ] || {
+	mkdir -p /etc/smartdns-lite/domain-set /etc/smartdns-lite/ip-set
 	# Older versions registered the generated file in the full smartdns
 	# configuration. Drop it, otherwise both daemons would bind the same port.
 	if uci -q get "smartdns.@smartdns[0].conf_files" | grep -qF "/var/etc/smartdns/smartdns-lite.conf"; then
 		uci -q del_list "smartdns.@smartdns[0].conf_files=/var/etc/smartdns/smartdns-lite.conf"
 		uci -q set "smartdns.@smartdns[0].enabled=0"
 		uci commit smartdns
-		/etc/init.d/smartdns reload
+		[ -x /etc/init.d/smartdns ] && /etc/init.d/smartdns reload
 	fi
 	/etc/init.d/smartdns-lite clear_rules
 	if [ "$$(uci -q get smartdns-lite.@smartdns-lite[0].enabled)" = "1" ]; then

@@ -28,7 +28,18 @@ endef
 define Package/$(PKG_NAME)/postinst
 #!/bin/sh
 [ -n "$${IPKG_INSTROOT}" ] || {
+	# Older versions registered the generated file in the full smartdns
+	# configuration. Drop it, otherwise both daemons would bind the same port.
+	if uci -q get "smartdns.@smartdns[0].conf_files" | grep -qF "/var/etc/smartdns/smartdns-lite.conf"; then
+		uci -q del_list "smartdns.@smartdns[0].conf_files=/var/etc/smartdns/smartdns-lite.conf"
+		uci -q set "smartdns.@smartdns[0].enabled=0"
+		uci commit smartdns
+		/etc/init.d/smartdns reload
+	fi
 	/etc/init.d/smartdns-lite clear_rules
+	if [ "$$(uci -q get smartdns-lite.@smartdns-lite[0].enabled)" = "1" ]; then
+		/etc/init.d/smartdns-lite restart
+	fi
 	/etc/init.d/smartdns-lite enable
 	rm -f /tmp/luci-indexcache.*
 	rm -rf /tmp/luci-modulecache/
@@ -39,7 +50,7 @@ endef
 define Package/$(PKG_NAME)/prerm
 #!/bin/sh
 [ -n "$${IPKG_INSTROOT}" ] || {
-	/etc/init.d/smartdns-lite clear_rules
+	/etc/init.d/smartdns-lite stop
 	/etc/init.d/smartdns-lite disable
 	rm -f /var/etc/smartdns/smartdns-lite.conf
 }

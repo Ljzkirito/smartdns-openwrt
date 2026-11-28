@@ -27,11 +27,10 @@
 'require ui';
 
 /*
- * The lite app does not run its own daemon: it generates a smartdns
- * configuration fragment and registers it in the config of the full
- * smartdns service, so the service status is that of "smartdns".
+ * The lite app runs its own smartdns instance with a generated, standalone
+ * configuration, so its status is independent of the full smartdns service.
  */
-const conf = 'smartdns';
+const conf = 'smartdns-lite';
 
 const callServiceList = rpc.declare({
 	object: 'service',
@@ -45,7 +44,7 @@ const SERVER_PATTERN = /^(https?|udp|tcp|tls|quic|h3):\/\/[0-9a-zA-Z.\[\]:]+(\/[
 let pollAdded = false;
 
 const getServiceStatus = () => L.resolveDefault(callServiceList(conf), {})
-	.then(res => res?.[conf]?.instances?.smartdns?.running ?? false);
+	.then(res => res?.[conf]?.instances?.[conf]?.running ?? false);
 
 const smartdnsServiceStatus = () => Promise.all([
 	getServiceStatus(),
@@ -54,15 +53,15 @@ const smartdnsServiceStatus = () => Promise.all([
 ]);
 
 const smartdnsRenderStatus = res => {
-	const autoSetDnsmasq = uci.get_first('smartdns', 'smartdns', 'auto_set_dnsmasq');
-	const smartdnsPort = uci.get_first('smartdns', 'smartdns', 'port') ?? '';
-	const smartdnsEnable = uci.get_first('smartdns', 'smartdns', 'enabled');
+	const serverMode = uci.get_first('smartdns-lite', 'smartdns-lite', 'server_mode');
+	const smartdnsPort = uci.get_first('smartdns-lite', 'smartdns-lite', 'port') ?? '';
+	const smartdnsEnable = uci.get_first('smartdns-lite', 'smartdns-lite', 'enabled');
 	const dnsmasqServer = uci.get_first('dhcp', 'dnsmasq', 'server') ?? '';
 
 	const nodes = [];
 
 	if (!res[0]) {
-		nodes.push(E('span', { style: 'color:red;font-weight:bold' }, `SmartDNS - ${_('NOT RUNNING')}`));
+		nodes.push(E('span', { style: 'color:red;font-weight:bold' }, `${_('SmartDNS Lite')} - ${_('NOT RUNNING')}`));
 
 		if (smartdnsEnable === '1')
 			nodes.push(E('br'), E('span', { style: 'color:red;font-weight:bold' },
@@ -71,9 +70,9 @@ const smartdnsRenderStatus = res => {
 		return nodes;
 	}
 
-	nodes.push(E('span', { style: 'color:green;font-weight:bold' }, `SmartDNS - ${_('RUNNING')}`));
+	nodes.push(E('span', { style: 'color:green;font-weight:bold' }, `${_('SmartDNS Lite')} - ${_('RUNNING')}`));
 
-	if (autoSetDnsmasq === '1' && smartdnsPort && smartdnsPort !== '53' &&
+	if (serverMode === 'dnsmasq_upstream' && smartdnsPort && smartdnsPort !== '53' &&
 	    !dnsmasqServer.includes(`127.0.0.1#${smartdnsPort}`))
 		nodes.push(E('br'), E('span', { style: 'color:red;font-weight:bold' },
 			_('Dnsmasq Forwarded To Smartdns Failure')));
@@ -113,7 +112,6 @@ return view.extend({
 	load() {
 		return Promise.all([
 			uci.load('dhcp'),
-			uci.load('smartdns'),
 			uci.load('smartdns-lite')
 		]);
 	},
@@ -178,6 +176,7 @@ return view.extend({
 		o = s.taboption('settings', form.ListValue, 'server_mode', _('DNS Server Mode'),
 			_('Smartdns server mode.'));
 		o.rmempty = false;
+		o.default = 'main';
 		o.value('main', _('Main DNS Server'));
 		o.value('upstream', _('Upstream DNS Server'));
 		o.value('dnsmasq_upstream', _('Dnsmasq Upstream Server'));

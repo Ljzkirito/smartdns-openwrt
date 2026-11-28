@@ -9,7 +9,7 @@
 			"ubus": {
 				"service": [ "list" ]
 			},
-			"uci": [ "smartdns-lite", "smartdns", "dhcp" ]
+			"uci": [ "smartdns-lite", "dhcp" ]
 		},
 		"write": {
 			"file": {

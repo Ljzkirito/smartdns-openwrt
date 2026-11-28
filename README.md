@@ -11,7 +11,7 @@
 | `smartdns-openssl` | OpenSSL 3 运行库：`/usr/lib/smartdns/libssl.so.3`、`libcrypto.so.3`（隐藏包，系统 OpenSSL < 3.3 时安装） | `libc` |
 | `WebUI` | Web 面板：`/usr/lib/smartdns_ui.so` 与 `/usr/share/smartdns/wwwroot` | `smartdns` |
 | `luci-app-smartdns` | LuCI 配置页面 | `smartdns`，可选 `WebUI` |
-| `luci-app-smartdns-lite` | 精简版 LuCI 配置页面（生成配置片段交由 `smartdns` 加载） | `smartdns` |
+| `luci-app-smartdns-lite` | 精简版 LuCI 配置页面（独立的 `smartdns` 实例） | `smartdns` |
 
 安装 `luci-app-smartdns` 时，`Include WebUI` 选项（`PACKAGE_luci-app-smartdns_INCLUDE_WebUI`，**默认关闭**）决定是否一并安装面板。
 默认只安装 DNS 服务端；需要面板时，在 menuconfig 中勾选该子选项，或在 `.config` 中写入 `CONFIG_PACKAGE_luci-app-smartdns_INCLUDE_WebUI=y`（等价于直接选中 `CONFIG_PACKAGE_smartdns-ui=y`）。
@@ -22,11 +22,12 @@
 
 `luci-app-smartdns-lite` 是面向“只做国内分流 / 分流域名”场景的精简配置页面，与 `luci-app-smartdns` 互不冲突，可同时安装。
 
-它本身不运行守护进程，而是把配置页面中的设置生成为 `/var/etc/smartdns/smartdns-lite.conf`，再通过 UCI 把该文件登记到 `smartdns.@smartdns[0].conf_files`，同时按所选模式调整 `enabled`、`port`、`auto_set_dnsmasq`，最后重载 `/etc/init.d/smartdns`。因此：
+它使用 `smartdns` 包中的二进制，但拥有独立的配置与实例：页面设置会生成完整的 `/var/etc/smartdns/smartdns-lite.conf`，由 `/etc/init.d/smartdns-lite` 通过 procd 以 `smartdns -f -c` 启动，不再读写 `smartdns` 的 UCI 配置，也不调用 `/etc/init.d/smartdns`。因此：
 
-- 必须先安装 `smartdns` 服务端包（本包依赖已声明）；
-- 页面状态栏展示的是 `smartdns` 服务的运行状态；
-- 关闭本页面中的 `enabled` 后，会撤销自身生成的配置片段并重载服务。
+- 必须先安装 `smartdns` 服务端包（本包依赖已声明），但无需启用 `smartdns` 服务；
+- 页面状态栏展示的是 `smartdns-lite` 实例的运行状态；
+- `Main DNS` 模式会接管 dnsmasq（关闭 dnsmasq 的 53 端口并下发 DHCP DNS），`Dnsmasq Upstream` 模式则把 dnsmasq 的上游指向本实例；
+- 关闭 `enabled` 或停止服务时，会撤销对 dnsmasq 的修改并清理 TPROXY 规则。
 
 ## 为什么使用预构建二进制
 

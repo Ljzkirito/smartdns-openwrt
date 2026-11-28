@@ -1,0 +1,22 @@
+{
+	"luci-app-smartdns-lite": {
+		"description": "Grant access to LuCI app smartdns lite",
+		"read": {
+			"cgi-io": [ "exec" ],
+			"file": {
+				"/etc/smartdns/*": [ "read" ]
+			},
+			"ubus": {
+				"service": [ "list" ]
+			},
+			"uci": [ "smartdns-lite", "smartdns", "dhcp" ]
+		},
+		"write": {
+			"file": {
+				"/etc/smartdns/*": [ "write" ],
+				"/etc/init.d/smartdns-lite restart": [ "exec" ]
+			},
+			"uci": [ "smartdns-lite" ]
+		}
+	}
+}

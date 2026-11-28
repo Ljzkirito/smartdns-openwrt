@@ -11,11 +11,22 @@
 | `smartdns-openssl` | OpenSSL 3 运行库：`/usr/lib/smartdns/libssl.so.3`、`libcrypto.so.3`（隐藏包，系统 OpenSSL < 3.3 时安装） | `libc` |
 | `WebUI` | Web 面板：`/usr/lib/smartdns_ui.so` 与 `/usr/share/smartdns/wwwroot` | `smartdns` |
 | `luci-app-smartdns` | LuCI 配置页面 | `smartdns`，可选 `WebUI` |
+| `luci-app-smartdns-lite` | 精简版 LuCI 配置页面（生成配置片段交由 `smartdns` 加载） | `smartdns` |
 
 安装 `luci-app-smartdns` 时，`Include WebUI` 选项（`PACKAGE_luci-app-smartdns_INCLUDE_WebUI`，**默认关闭**）决定是否一并安装面板。
 默认只安装 DNS 服务端；需要面板时，在 menuconfig 中勾选该子选项，或在 `.config` 中写入 `CONFIG_PACKAGE_luci-app-smartdns_INCLUDE_WebUI=y`（等价于直接选中 `CONFIG_PACKAGE_smartdns-ui=y`）。
 未安装面板时，LuCI 页面不会显示 Web 面板相关设置。
 若曾开启 Web 面板后又卸载 `smartdns-ui`，init 脚本会检测到插件缺失并跳过面板配置，不影响 DNS 服务启动。
+
+## 关于 luci-app-smartdns-lite
+
+`luci-app-smartdns-lite` 是面向“只做国内分流 / 分流域名”场景的精简配置页面，与 `luci-app-smartdns` 互不冲突，可同时安装。
+
+它本身不运行守护进程，而是把配置页面中的设置生成为 `/var/etc/smartdns/smartdns-lite.conf`，再通过 UCI 把该文件登记到 `smartdns.@smartdns[0].conf_files`，同时按所选模式调整 `enabled`、`port`、`auto_set_dnsmasq`，最后重载 `/etc/init.d/smartdns`。因此：
+
+- 必须先安装 `smartdns` 服务端包（本包依赖已声明）；
+- 页面状态栏展示的是 `smartdns` 服务的运行状态；
+- 关闭本页面中的 `enabled` 后，会撤销自身生成的配置片段并重载服务。
 
 ## 为什么使用预构建二进制
 
@@ -38,10 +49,12 @@
 # 在 OpenWrt 21.02 源码树中
 ln -s /path/to/smartdns-openwrt/smartdns feeds/package/smartdns
 ln -s /path/to/smartdns-openwrt/luci-app-smartdns feeds/luci/applications/luci-app-smartdns
+ln -s /path/to/smartdns-openwrt/luci-app-smartdns-lite feeds/luci/applications/luci-app-smartdns-lite
 
 make menuconfig   # Network -> IP Addresses and Names -> smartdns；LuCI -> Applications -> luci-app-smartdns -> Include smartdns-ui
 make package/smartdns/compile V=s
 make package/luci-app-smartdns/compile V=s
+make package/luci-app-smartdns-lite/compile V=s
 ```
 
 `Include WebUI` 默认关闭：只装服务端时无需额外操作；需要 Web 面板时，请在选择 `luci-app-smartdns` 后勾选该子选项，或直接选中 `smartdns-ui`（两者等价），否则 `smartdns-ui` 不会被编译进固件。

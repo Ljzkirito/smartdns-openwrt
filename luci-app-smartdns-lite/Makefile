@@ -32,26 +32,6 @@ define Package/$(PKG_NAME)/conffiles
 /etc/config/smartdns-lite
 endef
 
-define Package/$(PKG_NAME)/postinst
-#!/bin/sh
-[ -n "$${IPKG_INSTROOT}" ] || {
-	/etc/init.d/smartdns-lite clear_rules
-	/etc/init.d/smartdns-lite enable
-	rm -f /tmp/luci-indexcache.*
-	rm -rf /tmp/luci-modulecache/
-	/etc/init.d/rpcd reload 2>/dev/null
-}
-endef
-
-define Package/$(PKG_NAME)/prerm
-#!/bin/sh
-[ -n "$${IPKG_INSTROOT}" ] || {
-	/etc/init.d/smartdns-lite clear_rules
-	/etc/init.d/smartdns-lite disable
-	rm -f /var/etc/smartdns/smartdns-lite.conf
-}
-endef
-
 include $(TOPDIR)/feeds/luci/luci.mk
 
 # call BuildPackage - OpenWrt buildroot signature

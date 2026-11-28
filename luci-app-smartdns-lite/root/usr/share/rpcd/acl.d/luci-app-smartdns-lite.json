@@ -4,7 +4,8 @@
 		"read": {
 			"cgi-io": [ "exec" ],
 			"file": {
-				"/etc/smartdns-lite/*": [ "read" ]
+				"/etc/smartdns-lite/*": [ "read" ],
+				"/usr/lib/smartdns_ui.so": [ "read" ]
 			},
 			"ubus": {
 				"service": [ "list" ]

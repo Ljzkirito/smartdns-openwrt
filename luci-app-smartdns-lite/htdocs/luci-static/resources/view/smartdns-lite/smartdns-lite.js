@@ -52,11 +52,13 @@ const smartdnsServiceStatus = () => Promise.all([
 	uci.load('dhcp')
 ]);
 
-const smartdnsRenderStatus = res => {
+const smartdnsRenderStatus = (res, hasUi) => {
 	const serverMode = uci.get_first('smartdns-lite', 'smartdns-lite', 'server_mode');
 	const smartdnsPort = uci.get_first('smartdns-lite', 'smartdns-lite', 'port') ?? '';
 	const smartdnsEnable = uci.get_first('smartdns-lite', 'smartdns-lite', 'enabled');
 	const dnsmasqServer = uci.get_first('dhcp', 'dnsmasq', 'server') ?? '';
+	const uiEnable = uci.get_first('smartdns-lite', 'smartdns-lite', 'ui') ?? '0';
+	const uiPort = uci.get_first('smartdns-lite', 'smartdns-lite', 'ui_port') ?? '6080';
 
 	const nodes = [];
 
@@ -71,6 +73,14 @@ const smartdnsRenderStatus = res => {
 	}
 
 	nodes.push(E('span', { style: 'color:green;font-weight:bold' }, `${_('SmartDNS Lite')} - ${_('RUNNING')}`));
+
+	if (uiEnable === '1' && hasUi)
+		nodes.push(' ', E('a', {
+			class: 'btn cbi-button',
+			href: `${window.location.protocol}//${window.location.hostname}:${uiPort}`,
+			target: '_blank',
+			rel: 'noopener'
+		}, _('Open the WebUI')));
 
 	if (serverMode === 'dnsmasq_upstream' && smartdnsPort && smartdnsPort !== '53' &&
 	    !dnsmasqServer.includes(`127.0.0.1#${smartdnsPort}`))
@@ -108,15 +118,20 @@ const validateClientAddr = (section_id, value) => {
 	return _('Client address format error, please input IP address or MAC address.');
 };
 
+const isSmartdnsUiAvailable = () => fs.stat('/usr/lib/smartdns_ui.so')
+	.then(res => res?.type === 'file')
+	.catch(() => false);
+
 return view.extend({
 	load() {
 		return Promise.all([
 			uci.load('dhcp'),
-			uci.load('smartdns-lite')
+			uci.load('smartdns-lite'),
+			isSmartdnsUiAvailable()
 		]);
 	},
 
-	render(stats) {
+	render([, , hasUi]) {
 		let m, s, o;
 
 		m = new form.Map('smartdns-lite', _('SmartDNS Lite'));
@@ -128,7 +143,7 @@ return view.extend({
 		s.render = () => {
 			const renderStatus = () => L.resolveDefault(smartdnsServiceStatus()).then(res => {
 				document.getElementById('service_status')
-					?.replaceChildren(...smartdnsRenderStatus(res));
+					?.replaceChildren(...smartdnsRenderStatus(res, hasUi));
 			});
 
 			if (!pollAdded) {
@@ -315,6 +330,37 @@ return view.extend({
 		o = s.taboption('settings', form.Value, 'rr_ttl_max', _('Domain TTL Max'),
 			_('Maximum TTL for all domain result.'));
 		o.rmempty = true;
+
+		////////////////
+		// WebUI;
+		////////////////
+		if (hasUi || uci.get_first('smartdns-lite', 'smartdns-lite', 'ui') === '1') {
+			o = s.taboption('settings', form.Flag, 'ui', _('Enable WebUI'),
+				_('Enable or disable smartdns webui plugin.'));
+			o.rmempty = false;
+			o.default = o.disabled;
+
+			o = s.taboption('settings', form.Value, 'ui_port', _('WebUI Port'),
+				_('WebUI server port.'));
+			o.placeholder = 6080;
+			o.datatype = 'port';
+			o.rmempty = true;
+			o.depends('ui', '1');
+
+			o = s.taboption('settings', form.Value, 'ui_data_dir', _('WebUI Data Dir'),
+				_('Directory for storing the webui database.'));
+			o.placeholder = '/var/lib/smartdns-lite';
+			o.datatype = 'string';
+			o.rmempty = true;
+			o.depends('ui', '1');
+
+			o = s.taboption('settings', form.Value, 'ui_log_max_age', _('WebUI Log Retention'),
+				_('Number of days to retain webui logs.'));
+			o.placeholder = 30;
+			o.datatype = 'uinteger';
+			o.rmempty = true;
+			o.depends('ui', '1');
+		}
 
 		///////////////////////////////////////
 		// Parental Control Settings

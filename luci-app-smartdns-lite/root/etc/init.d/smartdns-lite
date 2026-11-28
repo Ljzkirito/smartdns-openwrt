@@ -379,6 +379,7 @@ load_service()
 	local serve_expired cache_size cache_file cache_persist resolve_local_hostnames
 	local dnsmasq_lease_file odhcpd_lease_file mdns_lookup force_aaaa_soa force_https_soa
 	local qtype_soa_list rr_ttl rr_ttl_min rr_ttl_max
+	local ui ui_port ui_data_dir ui_log_max_age
 
 	[ "$INSTANCE_STARTED" = "1" ] && return
 
@@ -507,6 +508,25 @@ load_service()
 	[ -z "$rr_ttl_min" ] || conf_append "rr-ttl-min" "$rr_ttl_min"
 	config_get rr_ttl_max "$section" "rr_ttl_max" ""
 	[ -z "$rr_ttl_max" ] || conf_append "rr-ttl-max" "$rr_ttl_max"
+
+
+	# SmartDNS WebUI plugin;
+	config_get_bool ui "$section" "ui" "0"
+	if [ "$ui" = "1" ]; then
+		if [ -f "/usr/lib/smartdns_ui.so" ]; then
+			config_get ui_port "$section" "ui_port" "6080"
+			config_get ui_data_dir "$section" "ui_data_dir" "/var/lib/smartdns-lite"
+			config_get ui_log_max_age "$section" "ui_log_max_age" "30"
+
+			conf_append "plugin" "smartdns_ui.so"
+			conf_append "smartdns-ui.www-root" "/usr/share/smartdns/wwwroot"
+			conf_append "smartdns-ui.ip" "http://[::]:$ui_port"
+			conf_append "data-dir" "$ui_data_dir"
+			conf_append "smartdns-ui.max-query-log-age" "$((ui_log_max_age * 86400))"
+		else
+			logger -t smartdns-lite "WebUI is enabled but smartdns-ui is not installed, skipping"
+		fi
+	fi
 
 	[ -e "$CUSTOM_CONF" ] && conf_append "conf-file" "$CUSTOM_CONF"
 

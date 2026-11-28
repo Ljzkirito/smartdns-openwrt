@@ -13,414 +13,450 @@ msgstr ""
 "X-Poedit-Basepath: ../../htdocs/luci-static/resources/view/smartdns-lite\n"
 "X-Poedit-SearchPath-0: .\n"
 
-#: smartdns-lite.js:64
+#: smartdns-lite.js:66
 msgid "SmartDNS Lite"
 msgstr "SmartDNS Lite"
 
-#: smartdns-lite.js:64
+#: smartdns-lite.js:66
 msgid "NOT RUNNING"
 msgstr "未运行"
 
-#: smartdns-lite.js:68
+#: smartdns-lite.js:70
 msgid "Please check the system logs and check if the configuration is valid."
 msgstr "请检查系统日志，并检查配置是否合法。"
 
-#: smartdns-lite.js:73
+#: smartdns-lite.js:75
 msgid "RUNNING"
 msgstr "运行中"
 
-#: smartdns-lite.js:78
+#: smartdns-lite.js:83
+msgid "Open the WebUI"
+msgstr "打开 WebUI"
+
+#: smartdns-lite.js:88
 msgid "Dnsmasq Forwarded To Smartdns Failure"
 msgstr "Dnsmasq 转发至 SmartDNS 失败"
 
-#: smartdns-lite.js:89
+#: smartdns-lite.js:99
 msgid "Invalid server address: %s"
 msgstr "无效的服务器地址：%s"
 
-#: smartdns-lite.js:108
+#: smartdns-lite.js:118
 msgid "Client address format error, please input IP address or MAC address."
 msgstr "客户端地址格式错误，请输入 IP 地址或 MAC 地址。"
 
-#: smartdns-lite.js:124
+#: smartdns-lite.js:139
 msgid "A local SmartDNS server for lite users."
 msgstr "面向轻量用户的本地 SmartDNS 服务。"
 
-#: smartdns-lite.js:140
+#: smartdns-lite.js:155
 msgid "Collecting data ..."
 msgstr "正在收集数据 ..."
 
-#: smartdns-lite.js:146
+#: smartdns-lite.js:161
 msgid "Settings"
 msgstr "设置"
 
-#: smartdns-lite.js:149
+#: smartdns-lite.js:164
 msgid "Basic Settings"
 msgstr "基础设置"
 
-#: smartdns-lite.js:150
+#: smartdns-lite.js:165
 msgid "Parental Control Settings"
 msgstr "家长控制设置"
 
-#: smartdns-lite.js:151
+#: smartdns-lite.js:166
 msgid "Domain Rules Settings"
 msgstr "域名规则设置"
 
-#: smartdns-lite.js:152
+#: smartdns-lite.js:167
 msgid "CloudFlare CDN IP Settings"
 msgstr "CloudFlare CDN IP 设置"
 
-#: smartdns-lite.js:153
+#: smartdns-lite.js:168
 msgid "Set the IP addresses for accelerating CloudFlare CDN."
 msgstr "设置用于加速 CloudFlare CDN 的 IP 地址。"
 
-#: smartdns-lite.js:154
+#: smartdns-lite.js:169
 msgid "Custom Settings"
 msgstr "自定义设置"
 
-#: smartdns-lite.js:159
+#: smartdns-lite.js:174
 msgid "Enable"
 msgstr "启用"
 
-#: smartdns-lite.js:160
+#: smartdns-lite.js:175
 msgid "Enable or disable smartdns server"
 msgstr "启用或禁用 SmartDNS 服务"
 
-#: smartdns-lite.js:164
+#: smartdns-lite.js:179
 msgid "Upstream Server"
 msgstr "上游服务器"
 
-#: smartdns-lite.js:165
+#: smartdns-lite.js:180
 msgid "Upstream servers, format: [udp://|tcp://|tls://|https://|quic://|h3://][ip]."
 msgstr "上游服务器，格式：[udp://|tcp://|tls://|https://|quic://|h3://][ip]。"
 
-#: smartdns-lite.js:169
+#: smartdns-lite.js:184
 msgid "AD Block Domain List File"
 msgstr "广告屏蔽域名列表文件"
 
-#: smartdns-lite.js:170
+#: smartdns-lite.js:185
 msgid "Set the file for blocking ad domain names."
 msgstr "设置用于屏蔽广告域名的文件。"
 
-#: smartdns-lite.js:176
+#: smartdns-lite.js:191
 msgid "DNS Server Mode"
 msgstr "DNS 服务模式"
 
-#: smartdns-lite.js:177
+#: smartdns-lite.js:192
 msgid "Smartdns server mode."
 msgstr "SmartDNS 服务模式。"
 
-#: smartdns-lite.js:180
+#: smartdns-lite.js:195
 msgid "Main DNS Server"
 msgstr "主 DNS 服务"
 
-#: smartdns-lite.js:181
+#: smartdns-lite.js:196
 msgid "Upstream DNS Server"
 msgstr "上游 DNS 服务"
 
-#: smartdns-lite.js:182
+#: smartdns-lite.js:197
 msgid "Dnsmasq Upstream Server"
 msgstr "Dnsmasq 上游服务器"
 
-#: smartdns-lite.js:184
+#: smartdns-lite.js:199
 msgid "DNS Server Port"
 msgstr "DNS 服务端口"
 
-#: smartdns-lite.js:185
+#: smartdns-lite.js:200
 msgid "Smartdns server port."
 msgstr "SmartDNS 服务端口。"
 
-#: smartdns-lite.js:197
+#: smartdns-lite.js:211
 msgid "Speed Check Mode"
 msgstr "测速模式"
 
-#: smartdns-lite.js:198
+#: smartdns-lite.js:212
 msgid "Smartdns speed check mode."
 msgstr "SmartDNS 测速模式。"
 
-#: smartdns-lite.js:201
+#: smartdns-lite.js:215
 msgid "default"
 msgstr "默认"
 
-#: smartdns-lite.js:208
+#: smartdns-lite.js:222
 msgid "None"
 msgstr "无"
 
-#: smartdns-lite.js:226
+#: smartdns-lite.js:240
 msgid "TCP port is empty"
 msgstr "TCP 端口号为空"
 
-#: smartdns-lite.js:235
+#: smartdns-lite.js:249
 msgid "TCP SYN port is empty"
 msgstr "TCP SYN端口号为空"
 
-#: smartdns-lite.js:240
+#: smartdns-lite.js:254
 msgid "Speed check mode is invalid."
 msgstr "测速模式无效。"
 
-#: smartdns-lite.js:246
+#: smartdns-lite.js:260
 msgid "Response Mode"
 msgstr "响应模式"
 
-#: smartdns-lite.js:247
+#: smartdns-lite.js:261
 msgid "Smartdns response mode, First Ping: return the first ping IP, Fastest IP: return the fastest IP, Fastest Response: return the fastest DNS response."
 msgstr "SmartDNS 响应模式，最快 Ping：返回最早有 ping 结果的 IP，速度适中；最快 IP：返回最快 IP，查询请求可能延长；最快响应：返回最快响应的结果，查询请求时间短。"
 
-#: smartdns-lite.js:251
+#: smartdns-lite.js:265
 msgid "First Ping"
 msgstr "最快 Ping"
 
-#: smartdns-lite.js:252
+#: smartdns-lite.js:266
 msgid "Fastest IP"
 msgstr "最快 IP"
 
-#: smartdns-lite.js:253
+#: smartdns-lite.js:267
 msgid "Fastest Response"
 msgstr "最快响应"
 
-#: smartdns-lite.js:255
+#: smartdns-lite.js:269
 msgid "Dual-stack IP Selection"
 msgstr "双栈 IP 优选"
 
-#: smartdns-lite.js:256
+#: smartdns-lite.js:270
 msgid "Enable IP selection between IPv4 and IPv6"
 msgstr "启用 IPv4 和 IPv6 间的 IP 优选策略。"
 
-#: smartdns-lite.js:260
+#: smartdns-lite.js:274
 msgid "Domain prefetch"
 msgstr "域名预加载"
 
-#: smartdns-lite.js:261
+#: smartdns-lite.js:275
 msgid "Enable domain prefetch, accelerate domain response speed."
 msgstr "启用域名预加载，加速域名响应速度。"
 
-#: smartdns-lite.js:265
+#: smartdns-lite.js:279
 msgid "Serve expired"
 msgstr "缓存过期服务"
 
-#: smartdns-lite.js:266
+#: smartdns-lite.js:280
 msgid "Attempts to serve old responses from cache with a TTL of 0 in the response without waiting for the actual resolution to finish."
 msgstr "查询性能优化，有请求时尝试回应 TTL 为 0 的过期记录，以避免查询等待。"
 
-#: smartdns-lite.js:270
+#: smartdns-lite.js:284
 msgid "Cache Size"
 msgstr "缓存大小"
 
-#: smartdns-lite.js:271
+#: smartdns-lite.js:285
 msgid "DNS domain result cache size"
 msgstr "缓存 DNS 的结果，缓存大小，配置零则不缓存。"
 
-#: smartdns-lite.js:274
+#: smartdns-lite.js:288
 msgid "Cache Persist"
 msgstr "持久化缓存"
 
-#: smartdns-lite.js:275
+#: smartdns-lite.js:289
 msgid "Write cache to disk on exit and load on startup."
 msgstr "退出时保存 Cache 到磁盘，启动时加载。"
 
-#: smartdns-lite.js:279
+#: smartdns-lite.js:293
 msgid "Cache File"
 msgstr "缓存文件"
 
-#: smartdns-lite.js:280
+#: smartdns-lite.js:294
 msgid "Cache persist file path, used when cache persist is enabled."
 msgstr "缓存持久化文件路径，启用缓存持久化时生效。"
 
-#: smartdns-lite.js:286
+#: smartdns-lite.js:300
 msgid "Resolve Local Hostnames"
 msgstr "解析本地主机名"
 
-#: smartdns-lite.js:287
+#: smartdns-lite.js:301
 msgid "Resolve local hostnames by reading Dnsmasq or odhcpd lease files."
 msgstr "读取 Dnsmasq 或 odhcpd 的租约文件解析本地主机名。"
 
-#: smartdns-lite.js:291
+#: smartdns-lite.js:305
 msgid "mDNS Lookup"
 msgstr "mDNS 查询"
 
-#: smartdns-lite.js:292
+#: smartdns-lite.js:306
 msgid "Resolve local network hostname via mDNS protocol."
 msgstr "使用 mDNS 协议解析本地网络主机名。"
 
-#: smartdns-lite.js:296
+#: smartdns-lite.js:310
 msgid "Force AAAA SOA"
 msgstr "强制 AAAA SOA"
 
-#: smartdns-lite.js:297
+#: smartdns-lite.js:311
 msgid "Force AAAA SOA."
 msgstr "强制 AAAA SOA。"
 
-#: smartdns-lite.js:301
+#: smartdns-lite.js:315
 msgid "Force HTTPS SOA"
 msgstr "强制 HTTPS SOA"
 
-#: smartdns-lite.js:302
+#: smartdns-lite.js:316
 msgid "Force HTTPS SOA."
 msgstr "强制 HTTPS SOA。"
 
-#: smartdns-lite.js:306
+#: smartdns-lite.js:320
 msgid "Domain TTL"
 msgstr "域名 TTL"
 
-#: smartdns-lite.js:307
+#: smartdns-lite.js:321
 msgid "TTL for all domain result."
 msgstr "设置所有域名的 TTL 值。"
 
-#: smartdns-lite.js:310
+#: smartdns-lite.js:324
 msgid "Domain TTL Min"
 msgstr "域名 TTL 最小值"
 
-#: smartdns-lite.js:311
+#: smartdns-lite.js:325
 msgid "Minimum TTL for all domain result."
 msgstr "所有域名的最小 TTL 值。"
 
-#: smartdns-lite.js:315
+#: smartdns-lite.js:330
 msgid "Domain TTL Max"
 msgstr "域名 TTL 最大值"
 
-#: smartdns-lite.js:316
+#: smartdns-lite.js:331
 msgid "Maximum TTL for all domain result."
 msgstr "所有域名的最大 TTL 值。"
 
-#: smartdns-lite.js:323
+#: smartdns-lite.js:339
+msgid "Enable WebUI"
+msgstr "启用 WebUI"
+
+#: smartdns-lite.js:340
+msgid "Enable or disable smartdns webui plugin."
+msgstr "启用或禁用 SmartDNS WebUI 插件。"
+
+#: smartdns-lite.js:344
+msgid "WebUI Port"
+msgstr "WebUI 端口"
+
+#: smartdns-lite.js:345
+msgid "WebUI server port."
+msgstr "WebUI 服务端口。"
+
+#: smartdns-lite.js:351
+msgid "WebUI Data Dir"
+msgstr "WebUI 数据库目录"
+
+#: smartdns-lite.js:352
+msgid "Directory for storing the webui database."
+msgstr "用于存储 WebUI 数据库的目录。"
+
+#: smartdns-lite.js:358
+msgid "WebUI Log Retention"
+msgstr "WebUI 日志保存天数"
+
+#: smartdns-lite.js:359
+msgid "Number of days to retain webui logs."
+msgstr "保留 WebUI 日志的天数。"
+
+#: smartdns-lite.js:370
 msgid "Enable or disable parental control."
 msgstr "启用或禁用家长控制。"
 
-#: smartdns-lite.js:333
+#: smartdns-lite.js:380
 msgid "Parental control feature is only available in Main DNS mode."
 msgstr "家长控制功能仅在主 DNS 模式下可用。"
 
-#: smartdns-lite.js:336
+#: smartdns-lite.js:383
 msgid "Client Address"
 msgstr "客户端地址"
 
-#: smartdns-lite.js:337
+#: smartdns-lite.js:384
 msgid "If a client address is specified, only that client will apply this rule. You can enter an IP address, such as 1.2.3.4, or a MAC address, such as aa:bb:cc:dd:ee:ff."
 msgstr "指定客户端地址后，仅该客户端应用此规则。可输入 IP 地址（如 1.2.3.4）或 MAC 地址（如 aa:bb:cc:dd:ee:ff）。"
 
-#: smartdns-lite.js:341
+#: smartdns-lite.js:388
 msgid "Client Address File"
 msgstr "客户端地址文件"
 
-#: smartdns-lite.js:342
+#: smartdns-lite.js:389
 msgid "Client address list file, one IP address, CIDR or MAC address per line."
 msgstr "客户端地址列表文件，每行一个 IP 地址、CIDR 或 MAC 地址。"
 
-#: smartdns-lite.js:348
+#: smartdns-lite.js:395
 msgid "Parental Control Upstream Server"
 msgstr "家长控制上游服务器"
 
-#: smartdns-lite.js:349
+#: smartdns-lite.js:396
 msgid "Upstream server with parental control feature. If not specified, the default server will be used."
 msgstr "启用家长控制的上游服务器；未指定时使用默认服务器。"
 
-#: smartdns-lite.js:353
+#: smartdns-lite.js:400
 msgid "Parental Control Domain File"
 msgstr "家长控制域名文件"
 
-#: smartdns-lite.js:354
+#: smartdns-lite.js:401
 msgid "Block Domain List File for Parental Control."
 msgstr "家长控制的域名屏蔽列表文件。"
 
-#: smartdns-lite.js:364
+#: smartdns-lite.js:411
 msgid "Enable or disable domain rules."
 msgstr "启用或禁用域名规则。"
 
-#: smartdns-lite.js:368
+#: smartdns-lite.js:415
 msgid "Domain List File"
 msgstr "域名列表文件"
 
-#: smartdns-lite.js:369
+#: smartdns-lite.js:416
 msgid "Upload domain list file for matching these rules, if not specified, the rules will be applied to all domains."
 msgstr "上传用于匹配这些规则的域名列表文件；未指定时规则将应用于所有域名。"
 
-#: smartdns-lite.js:376
+#: smartdns-lite.js:423
 msgid "Upstream server for specific domain. If not specified, the default server will be used."
 msgstr "指定域名的上游服务器；未指定时使用默认服务器。"
 
-#: smartdns-lite.js:381
+#: smartdns-lite.js:428
 msgid "Speed check mode for matching domains."
 msgstr "匹配域名的测速模式。"
 
-#: smartdns-lite.js:420
+#: smartdns-lite.js:467
 msgid "Use Internal IP Rules"
 msgstr "使用内置 IP 规则"
 
-#: smartdns-lite.js:421
+#: smartdns-lite.js:468
 msgid "Use internal IP rules to forward data to TPROXY service when the domain matches, avoiding the need to configure IP rules."
 msgstr "域名匹配时使用内置 IP 规则将数据转发至 TPROXY 服务，无需另行配置 IP 规则。"
 
-#: smartdns-lite.js:425
+#: smartdns-lite.js:472
 msgid "IPset Name"
 msgstr "IPset 名称"
 
-#: smartdns-lite.js:425
+#: smartdns-lite.js:472
 msgid "IPset name."
 msgstr "IPset 名称。"
 
-#: smartdns-lite.js:434
+#: smartdns-lite.js:481
 msgid "ipset name format error, format: [#[4|6]:]ipsetname"
 msgstr "IPset 名称格式错误，格式：[#[4|6]:]ipsetname"
 
-#: smartdns-lite.js:441
+#: smartdns-lite.js:488
 msgid "NFTset Name"
 msgstr "NFTset 名称"
 
-#: smartdns-lite.js:442
+#: smartdns-lite.js:489
 msgid "NFTset name, format: [#[4|6]:[family#table#set]]"
 msgstr "NFTset 名称，格式：[#[4|6]:[family#table#set]]"
 
-#: smartdns-lite.js:451
+#: smartdns-lite.js:498
 msgid "NFTset name format error, format: [#[4|6]:[family#table#set]]"
 msgstr "NFTset 名称格式错误，格式：[#[4|6]:[family#table#set]]"
 
-#: smartdns-lite.js:458
+#: smartdns-lite.js:505
 msgid "TPROXY Server Port"
 msgstr "TPROXY 服务端口"
 
-#: smartdns-lite.js:459
+#: smartdns-lite.js:506
 msgid "TPROXY server port used for forwarding data requests, please make sure this port has enabled TPROXY service."
 msgstr "用于转发数据请求的 TPROXY 服务端口，请确认该端口已启用 TPROXY 服务。"
 
-#: smartdns-lite.js:467
+#: smartdns-lite.js:514
 msgid "A TPROXY server port is required when using internal IP rules."
 msgstr "使用内部 IP 规则时必须填写 TPROXY 服务端口。"
 
-#: smartdns-lite.js:476
+#: smartdns-lite.js:523
 msgid "Enable or disable cloudflare cdn ip accelerating."
 msgstr "启用或禁用 CloudFlare CDN IP 加速。"
 
-#: smartdns-lite.js:480
+#: smartdns-lite.js:527
 msgid "CloudFlare CDN IP File"
 msgstr "CloudFlare CDN IP 文件"
 
-#: smartdns-lite.js:481
+#: smartdns-lite.js:528
 msgid "Upload CloudFlare cdn ip list file, please refer to https://www.cloudflare.com/ips"
 msgstr "上传 CloudFlare CDN IP 列表文件，参考 https://www.cloudflare.com/ips"
 
-#: smartdns-lite.js:487
+#: smartdns-lite.js:534
 msgid "IP alias"
 msgstr "IP 别名"
 
-#: smartdns-lite.js:488
+#: smartdns-lite.js:535
 msgid "IP Address Mapping, mapping all CloudFlare CDN IPs to the specified IP, can be used to accelerate CloudFlare's CDN websites."
 msgstr "IP 地址映射，将所有 CloudFlare CDN IP 映射到指定 IP，可用于加速 CloudFlare 的 CDN 网站。"
 
-#: smartdns-lite.js:497
+#: smartdns-lite.js:544
 msgid "smartdns custom settings"
 msgstr "SmartDNS 自定义设置"
 
-#: smartdns-lite.js:511
+#: smartdns-lite.js:558
 msgid "SmartDNS official website"
 msgstr "SmartDNS 官方网站"
 
-#: smartdns-lite.js:512
+#: smartdns-lite.js:559
 msgid "open website"
 msgstr "打开网站"
 
-#: smartdns-lite.js:516
+#: smartdns-lite.js:563
 msgid "Restart Service"
 msgstr "重启服务"
 
-#: smartdns-lite.js:523
+#: smartdns-lite.js:570
 msgid "Restart"
 msgstr "重启"

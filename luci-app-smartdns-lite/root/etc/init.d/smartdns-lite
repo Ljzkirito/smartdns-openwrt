@@ -251,6 +251,10 @@ load_service()
 	local server_options=""
 	local adblock_set_name=""
 	local auto_set_dnsmasq="0"
+	local speed_check_mode response_mode dualstack_ip_selection prefetch_domain serve_expired
+	local cache_size cache_file cache_persist resolve_local_hostnames mdns_lookup
+	local force_aaaa_soa force_https_soa rr_ttl rr_ttl_min rr_ttl_max qtype_soa_list=""
+	local dnsmasq_lease_file odhcpd_lease_file ui ui_port ui_data_dir ui_log_max_age
 
 	mkdir -p "$SMARTDNS_VAR_CONF_DIR"
 	rm -f "$SMARTDNS_CONF_TMP"
@@ -271,6 +275,81 @@ load_service()
 	[ "$server_mode" = "main" ] && port="53"
 
 	[ "$server_mode" = "dnsmasq_upstream" ] && auto_set_dnsmasq="1"
+
+	config_get speed_check_mode "$section" "speed_check_mode" ""
+	[ -z "$speed_check_mode" ] || conf_append "speed-check-mode" "$speed_check_mode"
+
+	config_get response_mode "$section" "response_mode" ""
+	[ -z "$response_mode" ] || conf_append "response-mode" "$response_mode"
+
+	config_get_bool dualstack_ip_selection "$section" "dualstack_ip_selection" "1"
+	[ "$dualstack_ip_selection" = "0" ] && conf_append "dualstack-ip-selection" "no"
+
+	config_get_bool prefetch_domain "$section" "prefetch_domain" "0"
+	[ "$prefetch_domain" = "0" ] || conf_append "prefetch-domain" "yes"
+
+	config_get_bool serve_expired "$section" "serve_expired" "1"
+	if [ "$serve_expired" = "0" ]; then
+		conf_append "serve-expired" "no"
+	else
+		conf_append "serve-expired" "yes"
+	fi
+
+	config_get cache_size "$section" "cache_size" ""
+	[ -z "$cache_size" ] || conf_append "cache-size" "$cache_size"
+
+	config_get_bool cache_persist "$section" "cache_persist" "1"
+	config_get cache_file "$section" "cache_file" "/etc/smartdns/smartdns.cache"
+	if [ "$cache_persist" = "1" ]; then
+		conf_append "cache-persist" "yes"
+		conf_append "cache-file" "$cache_file"
+	else
+		conf_append "cache-persist" "no"
+	fi
+
+	config_get_bool resolve_local_hostnames "$section" "resolve_local_hostnames" "1"
+	if [ "$resolve_local_hostnames" = "1" ]; then
+		dnsmasq_lease_file="$(uci -q get dhcp.@dnsmasq[0].leasefile)"
+		[ -n "$dnsmasq_lease_file" ] || dnsmasq_lease_file="/tmp/dhcp.leases"
+		conf_append "dnsmasq-lease-file" "$dnsmasq_lease_file"
+
+		odhcpd_lease_file="$(uci -q get dhcp.odhcpd.leasefile)"
+		[ -z "$odhcpd_lease_file" ] || conf_append "odhcpd-lease-file" "$odhcpd_lease_file"
+	fi
+
+	config_get_bool mdns_lookup "$section" "mdns_lookup" "0"
+	[ "$mdns_lookup" = "0" ] || conf_append "mdns-lookup" "yes"
+
+	config_get_bool force_aaaa_soa "$section" "force_aaaa_soa" "0"
+	config_get_bool force_https_soa "$section" "force_https_soa" "1"
+	[ "$force_aaaa_soa" = "0" ] || qtype_soa_list="${qtype_soa_list} 28"
+	[ "$force_https_soa" = "0" ] || qtype_soa_list="${qtype_soa_list} 65"
+	[ -z "$qtype_soa_list" ] || conf_append "force-qtype-SOA" "${qtype_soa_list# }"
+
+	config_get rr_ttl "$section" "rr_ttl" ""
+	[ -z "$rr_ttl" ] || conf_append "rr-ttl" "$rr_ttl"
+
+	config_get rr_ttl_min "$section" "rr_ttl_min" ""
+	[ -z "$rr_ttl_min" ] || conf_append "rr-ttl-min" "$rr_ttl_min"
+
+	config_get rr_ttl_max "$section" "rr_ttl_max" ""
+	[ -z "$rr_ttl_max" ] || conf_append "rr-ttl-max" "$rr_ttl_max"
+
+	config_get_bool ui "$section" "ui" "0"
+	if [ "$ui" = "1" ]; then
+		if [ -f "/usr/lib/smartdns_ui.so" ]; then
+			config_get ui_port "$section" "ui_port" "6080"
+			config_get ui_data_dir "$section" "ui_data_dir" "/var/lib/smartdns-lite"
+			config_get ui_log_max_age "$section" "ui_log_max_age" "30"
+			conf_append "plugin" "smartdns_ui.so"
+			conf_append "smartdns-ui.www-root" "/usr/share/smartdns/wwwroot"
+			conf_append "smartdns-ui.ip" "http://[::]:$ui_port"
+			conf_append "data-dir" "$ui_data_dir"
+			conf_append "smartdns-ui.max-query-log-age" "$((ui_log_max_age * 86400))"
+		else
+			logger -t smartdns-lite "WebUI is enabled but smartdns-ui is not installed, skipping"
+		fi
+	fi
 
 	config_list_foreach "$section" "servers" servers_append
 

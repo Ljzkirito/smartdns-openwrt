@@ -27,6 +27,8 @@
 - 必须先安装 `smartdns` 服务端包（本包依赖已声明）；
 - 页面状态栏展示的是 `smartdns` 服务的运行状态；
 - 关闭本页面中的 `enabled` 后，会撤销自身生成的配置片段并重载服务。
+- 基础设置页还提供测速模式、响应模式、双栈 IP 优选、域名预加载、缓存过期服务、缓存大小、持久化缓存、缓存文件、解析本地主机名、mDNS 查询、强制 AAAA/HTTPS SOA、域名 TTL（含最小/最大值）等解析与缓存选项，语义与完整版一致；默认值也与完整版相同（`cache_size 8000`、`speed_check_mode tcp-syn:443,tcp-syn:80,ping`、`prefetch_domain 1`、`mdns_lookup 1`）。
+- 安装 `smartdns-ui` 后，基础设置页会显示 WebUI 选项（启用、端口、数据库目录、日志保存天数）；启用后 `plugin smartdns_ui.so`、`data-dir` 等指令写入本页面的配置片段，运行状态右侧同时出现“打开 WebUI”按钮。
 
 ## 为什么使用预构建二进制
 

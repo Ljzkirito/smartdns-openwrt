@@ -53,11 +53,12 @@ const smartdnsServiceStatus = () => Promise.all([
 	uci.load('dhcp')
 ]);
 
-const smartdnsRenderStatus = res => {
+const smartdnsRenderStatus = (res, hasUi) => {
 	const autoSetDnsmasq = uci.get_first('smartdns', 'smartdns', 'auto_set_dnsmasq');
 	const smartdnsPort = uci.get_first('smartdns', 'smartdns', 'port') ?? '';
 	const smartdnsEnable = uci.get_first('smartdns', 'smartdns', 'enabled');
 	const dnsmasqServer = uci.get_first('dhcp', 'dnsmasq', 'server') ?? '';
+	const uiEnable = uci.get_first('smartdns-lite', 'smartdns-lite', 'ui') ?? '0';
 
 	const nodes = [];
 
@@ -73,6 +74,17 @@ const smartdnsRenderStatus = res => {
 
 	nodes.push(E('span', { style: 'color:green;font-weight:bold' }, `SmartDNS - ${_('RUNNING')}`));
 
+	if (uiEnable === '1' && hasUi) {
+		const uiPort = uci.get_first('smartdns-lite', 'smartdns-lite', 'ui_port') || '6080';
+
+		nodes.push(' ', E('a', {
+			class: 'btn cbi-button',
+			href: `${window.location.protocol}//${window.location.hostname}:${uiPort}`,
+			target: '_blank',
+			rel: 'noopener'
+		}, _('Open the WebUI')));
+	}
+
 	if (autoSetDnsmasq === '1' && smartdnsPort && smartdnsPort !== '53' &&
 	    !dnsmasqServer.includes(`127.0.0.1#${smartdnsPort}`))
 		nodes.push(E('br'), E('span', { style: 'color:red;font-weight:bold' },
@@ -80,6 +92,10 @@ const smartdnsRenderStatus = res => {
 
 	return nodes;
 };
+
+const isSmartdnsUiAvailable = () => fs.stat('/usr/lib/smartdns_ui.so')
+	.then(res => res?.type === 'file')
+	.catch(() => false);
 
 const validateServer = (section_id, value) => {
 	if (!value)
@@ -114,11 +130,12 @@ return view.extend({
 		return Promise.all([
 			uci.load('dhcp'),
 			uci.load('smartdns'),
-			uci.load('smartdns-lite')
+			uci.load('smartdns-lite'),
+			isSmartdnsUiAvailable()
 		]);
 	},
 
-	render(stats) {
+	render([, , hasUi]) {
 		let m, s, o;
 
 		m = new form.Map('smartdns-lite', _('SmartDNS Lite'));
@@ -130,7 +147,7 @@ return view.extend({
 		s.render = () => {
 			const renderStatus = () => L.resolveDefault(smartdnsServiceStatus()).then(res => {
 				document.getElementById('service_status')
-					?.replaceChildren(...smartdnsRenderStatus(res));
+					?.replaceChildren(...smartdnsRenderStatus(res, hasUi));
 			});
 
 			if (!pollAdded) {
@@ -190,6 +207,152 @@ return view.extend({
 		o.datatype = 'port';
 		o.depends('server_mode', 'upstream');
 		o.depends('server_mode', 'dnsmasq_upstream');
+
+		///////////////////////////////////////
+		// Resolver and Cache
+		///////////////////////////////////////
+		o = s.taboption('settings', form.Value, 'speed_check_mode', _('Speed Check Mode'),
+			_('Smartdns speed check mode.'));
+		o.rmempty = true;
+		o.placeholder = 'default';
+		o.value('', _('default'));
+		o.value('ping,tcp:80,tcp:443');
+		o.value('ping,tcp:443,tcp:80');
+		o.value('tcp:80,tcp:443,ping');
+		o.value('tcp:443,tcp:80,ping');
+		o.value('tcp-syn:80,tcp-syn:443,ping');
+		o.value('tcp-syn:443,tcp-syn:80,ping');
+		o.value('none', _('None'));
+		o.validate = function (section_id, value) {
+			if (!value || value === 'none')
+				return true;
+
+			for (const mode of value.split(',')) {
+				if (mode === 'ping')
+					continue;
+
+				if (mode.startsWith('tcp:')) {
+					if (!mode.split(':')[1])
+						return _('TCP port is empty');
+
+					continue;
+				}
+
+				if (mode.startsWith('tcp-syn:')) {
+					if (!mode.split(':')[1])
+						return _('TCP SYN port is empty');
+
+					continue;
+				}
+
+				return _('Speed check mode is invalid.');
+			}
+
+			return true;
+		};
+
+		o = s.taboption('settings', form.ListValue, 'response_mode', _('Response Mode'),
+			_('Smartdns response mode, First Ping: return the first ping IP, Fastest IP: return the fastest IP, Fastest Response: return the fastest DNS response.'));
+		o.rmempty = true;
+		o.placeholder = 'default';
+		o.value('', _('default'));
+		o.value('first-ping', _('First Ping'));
+		o.value('fastest-ip', _('Fastest IP'));
+		o.value('fastest-response', _('Fastest Response'));
+
+		o = s.taboption('settings', form.Flag, 'dualstack_ip_selection', _('Dual-stack IP Selection'),
+			_('Enable IP selection between IPv4 and IPv6'));
+		o.rmempty = false;
+		o.default = o.enabled;
+
+		o = s.taboption('settings', form.Flag, 'prefetch_domain', _('Domain prefetch'),
+			_('Enable domain prefetch, accelerate domain response speed.'));
+		o.rmempty = true;
+		o.default = o.disabled;
+
+		o = s.taboption('settings', form.Flag, 'serve_expired', _('Serve expired'),
+			_('Attempts to serve old responses from cache with a TTL of 0 in the response without waiting for the actual resolution to finish.'));
+		o.rmempty = false;
+		o.default = o.enabled;
+
+		o = s.taboption('settings', form.Value, 'cache_size', _('Cache Size'),
+			_('DNS domain result cache size'));
+		o.rmempty = true;
+
+		o = s.taboption('settings', form.Flag, 'cache_persist', _('Cache Persist'),
+			_('Write cache to disk on exit and load on startup.'));
+		o.rmempty = false;
+		o.default = o.enabled;
+
+		o = s.taboption('settings', form.Value, 'cache_file', _('Cache File'),
+			_('Cache persist file path, used when cache persist is enabled.'));
+		o.placeholder = '/etc/smartdns/smartdns.cache';
+		o.datatype = 'string';
+		o.rmempty = true;
+		o.depends('cache_persist', '1');
+
+		o = s.taboption('settings', form.Flag, 'resolve_local_hostnames', _('Resolve Local Hostnames'),
+			_('Resolve local hostnames by reading Dnsmasq or odhcpd lease files.'));
+		o.rmempty = false;
+		o.default = o.enabled;
+
+		o = s.taboption('settings', form.Flag, 'mdns_lookup', _('mDNS Lookup'),
+			_('Resolve local network hostname via mDNS protocol.'));
+		o.rmempty = true;
+		o.default = o.disabled;
+
+		o = s.taboption('settings', form.Flag, 'force_aaaa_soa', _('Force AAAA SOA'),
+			_('Force AAAA SOA.'));
+		o.rmempty = true;
+		o.default = o.disabled;
+
+		o = s.taboption('settings', form.Flag, 'force_https_soa', _('Force HTTPS SOA'),
+			_('Force HTTPS SOA.'));
+		o.rmempty = false;
+		o.default = o.enabled;
+
+		o = s.taboption('settings', form.Value, 'rr_ttl', _('Domain TTL'),
+			_('TTL for all domain result.'));
+		o.rmempty = true;
+
+		o = s.taboption('settings', form.Value, 'rr_ttl_min', _('Domain TTL Min'),
+			_('Minimum TTL for all domain result.'));
+		o.rmempty = true;
+		o.placeholder = '600';
+		o.default = 600;
+		o.optional = true;
+
+		o = s.taboption('settings', form.Value, 'rr_ttl_max', _('Domain TTL Max'),
+			_('Maximum TTL for all domain result.'));
+		o.rmempty = true;
+
+		///////////////////////////////////////
+		// WebUI
+		///////////////////////////////////////
+		if (hasUi || uci.get_first('smartdns-lite', 'smartdns-lite', 'ui') === '1') {
+			o = s.taboption('settings', form.Flag, 'ui', _('Enable WebUI'),
+				_('Enable or disable smartdns webui plugin.'));
+			o.rmempty = false;
+			o.default = o.disabled;
+
+			o = s.taboption('settings', form.Value, 'ui_port', _('WebUI Port'),
+				_('WebUI server port.'));
+			o.placeholder = 6080;
+			o.datatype = 'port';
+			o.depends('ui', '1');
+
+			o = s.taboption('settings', form.Value, 'ui_data_dir', _('WebUI Data Dir'),
+				_('Directory for storing the webui database.'));
+			o.placeholder = '/var/lib/smartdns-lite';
+			o.datatype = 'string';
+			o.depends('ui', '1');
+
+			o = s.taboption('settings', form.Value, 'ui_log_max_age', _('WebUI Log Retention'),
+				_('Number of days to retain webui logs.'));
+			o.placeholder = 30;
+			o.datatype = 'uinteger';
+			o.depends('ui', '1');
+		}
 
 		///////////////////////////////////////
 		// Parental Control Settings

@@ -460,3 +460,81 @@ msgstr "重启服务"
 #: smartdns-lite.js:561
 msgid "Restart"
 msgstr "重启"
+
+msgid "Delete"
+msgstr "删除"
+
+msgid "Delete this entry"
+msgstr "删除此项"
+
+msgid "Add new entry"
+msgstr "添加新条目"
+
+msgid "Apply"
+msgstr "应用"
+
+msgid "Upload File"
+msgstr "上传文件"
+
+msgid "Update Files"
+msgstr "更新文件"
+
+msgid "Invalid token"
+msgstr "无效的令牌"
+
+msgid "Some fields are invalid, please check the highlighted entries."
+msgstr "部分字段无效，请检查高亮标注的项。"
+
+msgid "Service restarted:"
+msgstr "服务已重启："
+
+msgid "Files updated:"
+msgstr "文件已更新："
+
+msgid "Configuration has been applied."
+msgstr "配置已应用。"
+
+msgid "Custom Configuration"
+msgstr "自定义配置"
+
+msgid "Upload AD Block Domain List"
+msgstr "上传广告屏蔽域名列表"
+
+msgid "The uploaded file is stored under /etc/smartdns/domain-set and is used as the AD block domain list."
+msgstr "上传的文件保存在 /etc/smartdns/domain-set 下，用作广告屏蔽域名列表。"
+
+msgid "Upload Client Address File"
+msgstr "上传客户端地址文件"
+
+msgid "The uploaded file is stored under /etc/smartdns/ip-set."
+msgstr "上传的文件保存在 /etc/smartdns/ip-set 下。"
+
+msgid "Upload Parental Control Domain File"
+msgstr "上传家长控制域名文件"
+
+msgid "The uploaded file is stored under /etc/smartdns/domain-set."
+msgstr "上传的文件保存在 /etc/smartdns/domain-set 下。"
+
+msgid "Upload Domain List File"
+msgstr "上传域名列表文件"
+
+msgid "Upload CloudFlare CDN IP File"
+msgstr "上传 CloudFlare CDN IP 文件"
+
+msgid "%s is required."
+msgstr "%s 为必填项。"
+
+msgid "%s is invalid."
+msgstr "%s 无效。"
+
+msgid "IP Address Mapping, mapping all CloudFlare CDN IPs to the specified IP, can be used to accelerate CloudFlare CDN websites."
+msgstr "IP 地址映射，将所有 CloudFlare CDN IP 映射到指定 IP，可用于加速 CloudFlare CDN 网站。"
+msgid "Invalid tab"
+msgstr "无效的标签页"
+
+msgid "File upload failed."
+msgstr "文件上传失败。"
+
+msgid "Failed to save the configuration."
+msgstr "保存配置失败。"
+

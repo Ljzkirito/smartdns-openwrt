@@ -2,8 +2,9 @@
 	"admin/services/smartdns": {
 		"title": "SmartDNS",
 		"action": {
-			"type": "view",
-			"path": "smartdns/smartdns"
+			"type": "function",
+			"module": "luci.controller.smartdns",
+			"function": "index"
 		},
 		"depends": {
 			"acl": [ "luci-app-smartdns" ],

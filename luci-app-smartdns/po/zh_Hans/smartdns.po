@@ -1267,3 +1267,684 @@ msgstr "如果缺少 EDNS 记录则丢弃该结果。"
 
 msgid "Download this file through the proxy server."
 msgstr "通过代理服务器下载此文件。"
+
+msgid "Delete"
+msgstr "删除"
+
+msgid "Delete this entry"
+msgstr "删除此项"
+
+msgid "Add new entry"
+msgstr "添加新条目"
+
+msgid "Apply"
+msgstr "应用"
+
+msgid "Invalid token"
+msgstr "无效的令牌"
+
+msgid "Some fields are invalid, please check the highlighted entries."
+msgstr "部分字段无效，请检查高亮标注的项。"
+
+msgid "Service restarted:"
+msgstr "服务已重启："
+
+msgid "Files updated:"
+msgstr "文件已更新："
+
+msgid "Configuration has been applied."
+msgstr "配置已应用。"
+
+msgid "Sunday"
+msgstr "星期日"
+
+msgid "Monday"
+msgstr "星期一"
+
+msgid "Tuesday"
+msgstr "星期二"
+
+msgid "Wednesday"
+msgstr "星期三"
+
+msgid "Thursday"
+msgstr "星期四"
+
+msgid "Friday"
+msgstr "星期五"
+
+msgid "Saturday"
+msgstr "星期六"
+
+msgid "Default"
+msgstr "默认"
+
+msgid "Debug"
+msgstr "调试"
+
+msgid "Info"
+msgstr "信息"
+
+msgid "Notice"
+msgstr "通知"
+
+msgid "Warning"
+msgstr "警告"
+
+msgid "Error"
+msgstr "错误"
+
+msgid "Fatal"
+msgstr "致命"
+
+msgid "Disabled"
+msgstr "禁用"
+
+msgid "File"
+msgstr "文件"
+
+msgid "Syslog"
+msgstr "系统日志"
+
+msgid "Configuration"
+msgstr "配置文件"
+
+msgid "IP Set"
+msgstr "IP 集合"
+
+msgid "Other"
+msgstr "其他"
+
+msgid "SmartDNS is enabled but not running. Please check the system log and whether the configuration is valid."
+msgstr "SmartDNS 已启用但未运行，请检查系统日志并确认配置是否有效。"
+
+msgid "Host name reported to clients"
+msgstr "向客户端报告的主机名"
+
+msgid "Port the DNS server listens on"
+msgstr "DNS 服务器监听的端口"
+
+msgid "Automatically set dnsmasq"
+msgstr "自动设置 Dnsmasq"
+
+msgid "Forward dnsmasq queries to SmartDNS"
+msgstr "将 Dnsmasq 的查询转发到 SmartDNS"
+
+msgid "Enable the SmartDNS WebUI if it is installed"
+msgstr "已安装 SmartDNS WebUI 时启用"
+
+msgid "WebUI port"
+msgstr "WebUI 端口"
+
+msgid "Listening port of the WebUI"
+msgstr "WebUI 监听端口"
+
+msgid "WebUI data directory"
+msgstr "WebUI 数据目录"
+
+msgid "Directory used to store WebUI data"
+msgstr "存储 WebUI 数据的目录"
+
+msgid "WebUI log max age"
+msgstr "WebUI 日志最长保留"
+
+msgid "Maximum age of stored WebUI logs in days"
+msgstr "WebUI 日志保留的最长天数"
+
+msgid "Comma separated list, e.g. tcp-syn:443,tcp-syn:80,ping"
+msgstr "以逗号分隔的列表，例如 tcp-syn:443,tcp-syn:80,ping"
+
+msgid "Enable TCP Server"
+msgstr "启用 TCP 服务器"
+
+msgid "Accept plain TCP queries"
+msgstr "接受普通 TCP 查询"
+
+msgid "Enable TLS Server"
+msgstr "启用 TLS 服务器"
+
+msgid "Accept DNS over TLS queries"
+msgstr "接受 DNS over TLS 查询"
+
+msgid "TLS Server Port"
+msgstr "TLS 服务器端口"
+
+msgid "Listening port of the TLS server"
+msgstr "TLS 服务器监听端口"
+
+msgid "Enable DoH Server"
+msgstr "启用 DoH 服务器"
+
+msgid "Accept DNS over HTTPS queries"
+msgstr "接受 DNS over HTTPS 查询"
+
+msgid "DoH Server Port"
+msgstr "DoH 服务器端口"
+
+msgid "Listening port of the DoH server"
+msgstr "DoH 服务器监听端口"
+
+msgid "Enable DDR"
+msgstr "启用 DDR"
+
+msgid "Discover designated resolvers automatically"
+msgstr "自动发现指定解析器"
+
+msgid "Certificate File"
+msgstr "证书文件"
+
+msgid "Path of the TLS certificate"
+msgstr "TLS 证书路径"
+
+msgid "Certificate Key File"
+msgstr "证书私钥文件"
+
+msgid "Path of the TLS certificate key"
+msgstr "TLS 证书私钥路径"
+
+msgid "Certificate Key Password"
+msgstr "证书私钥密码"
+
+msgid "Password of the TLS certificate key"
+msgstr "TLS 证书私钥的密码"
+
+msgid "Generate Certificate"
+msgstr "生成证书"
+
+msgid "Automatic"
+msgstr "自动"
+
+msgid "Certificate Subject Alternative Name"
+msgstr "证书主题备用名称"
+
+msgid "Additional SAN entries of the generated certificate"
+msgstr "所生成证书的附加 SAN 条目"
+
+msgid "Certificate Root Key File"
+msgstr "证书根密钥文件"
+
+msgid "Path of the root key used to sign generated certificates"
+msgstr "签发所生成证书所用根密钥的路径"
+
+msgid "Enable IPv6 Server"
+msgstr "启用 IPv6 服务器"
+
+msgid "Listen on IPv6 addresses"
+msgstr "监听 IPv6 地址"
+
+msgid "Comma separated list of network devices to bind to"
+msgstr "要绑定的网络设备列表，以逗号分隔"
+
+msgid "Use the device name instead of the device index"
+msgstr "使用设备名称代替设备序号"
+
+msgid "Select the fastest IPv4 or IPv6 address"
+msgstr "选择最快的 IPv4 或 IPv6 地址"
+
+msgid "Prefetch expired domain records in advance"
+msgstr "提前预取过期的域名记录"
+
+msgid "Serve expired cache entries while refreshing"
+msgstr "刷新时继续提供过期的缓存记录"
+
+msgid "Number of cached domain records"
+msgstr "缓存的域名记录数量"
+
+msgid "Persist the cache across restarts"
+msgstr "重启后保留缓存"
+
+msgid "Path of the persistent cache file"
+msgstr "持久化缓存文件路径"
+
+msgid "Resolve local hostnames"
+msgstr "解析本地主机名"
+
+msgid "Resolve hostnames from /etc/hosts and DHCP leases"
+msgstr "从 /etc/hosts 和 DHCP 租约解析主机名"
+
+msgid "Enable mDNS lookup"
+msgstr "启用 mDNS 查询"
+
+msgid "Resolve .local hostnames through mDNS"
+msgstr "通过 mDNS 解析 .local 主机名"
+
+msgid "Domain used to detect the public address"
+msgstr "用于探测公网地址的域名"
+
+msgid "Local domain suffix"
+msgstr "本地域名后缀"
+
+msgid "Return SOA for empty AAAA answers"
+msgstr "空 AAAA 应答时返回 SOA"
+
+msgid "Return SOA for empty HTTPS answers"
+msgstr "空 HTTPS 应答时返回 SOA"
+
+msgid "IPset collecting resolved addresses"
+msgstr "收集解析结果的 IPset"
+
+msgid "IPset No Speed Check"
+msgstr "IPset 跳过测速"
+
+msgid "Skip the speed check for IPset results"
+msgstr "IPset 结果跳过测速"
+
+msgid "NFTset collecting resolved addresses"
+msgstr "收集解析结果的 NFTset"
+
+msgid "NFTset No Speed Check"
+msgstr "NFTset 跳过测速"
+
+msgid "Skip the speed check for NFTset results"
+msgstr "NFTset 结果跳过测速"
+
+msgid "TTL"
+msgstr "TTL 值"
+
+msgid "Fixed TTL for all answers"
+msgstr "所有应答的固定 TTL"
+
+msgid "TTL Min"
+msgstr "TTL 最小值"
+
+msgid "Minimum TTL of answers"
+msgstr "应答的最小 TTL"
+
+msgid "TTL Max"
+msgstr "TTL 最大值"
+
+msgid "Maximum TTL of answers"
+msgstr "应答的最大 TTL"
+
+msgid "Reply TTL Max"
+msgstr "应答 TTL 最大值"
+
+msgid "Maximum TTL of the reply"
+msgstr "返回给客户端的最大 TTL"
+
+msgid "Server Flags"
+msgstr "服务器标识"
+
+msgid "Global smartdns flags"
+msgstr "全局 SmartDNS 标识"
+
+msgid "Configuration Files"
+msgstr "配置文件"
+
+msgid "Additional configuration files, one path per line"
+msgstr "附加配置文件，每行一个路径"
+
+msgid "Hosts Files"
+msgstr "Hosts 文件"
+
+msgid "Additional hosts files, one path per line"
+msgstr "附加 Hosts 文件，每行一个路径"
+
+msgid "Enable second server"
+msgstr "启用第二服务器"
+
+msgid "Start a second DNS server instance"
+msgstr "启动第二个 DNS 服务器实例"
+
+msgid "Second Server Port"
+msgstr "第二服务器端口"
+
+msgid "Listening port of the second server"
+msgstr "第二服务器监听端口"
+
+msgid "Accept plain TCP queries on the second server"
+msgstr "在第二服务器上接受普通 TCP 查询"
+
+msgid "Server group used by the second server"
+msgstr "第二服务器使用的服务器组"
+
+msgid "Disable speed check"
+msgstr "禁用测速"
+
+msgid "Do not run the speed check on the second server"
+msgstr "不在第二服务器上测速"
+
+msgid "Disable address rules"
+msgstr "禁用 address 规则"
+
+msgid "Ignore address rules on the second server"
+msgstr "在第二服务器上忽略 address 规则"
+
+msgid "Disable nameserver rules"
+msgstr "禁用 nameserver 规则"
+
+msgid "Ignore nameserver rules on the second server"
+msgstr "在第二服务器上忽略 nameserver 规则"
+
+msgid "Disable IPset rules"
+msgstr "禁用 IPset 规则"
+
+msgid "Ignore IPset rules on the second server"
+msgstr "在第二服务器上忽略 IPset 规则"
+
+msgid "Disable SOA rules"
+msgstr "禁用 SOA 规则"
+
+msgid "Ignore SOA rules on the second server"
+msgstr "在第二服务器上忽略 SOA 规则"
+
+msgid "Disable dual-stack selection"
+msgstr "禁用双栈优选"
+
+msgid "Do not select between IPv4 and IPv6"
+msgstr "不在 IPv4 和 IPv6 之间优选"
+
+msgid "Disable cache"
+msgstr "禁用缓存"
+
+msgid "Do not cache answers on the second server"
+msgstr "不在第二服务器上缓存应答"
+
+msgid "Disable IP alias"
+msgstr "禁用 IP 别名"
+
+msgid "Ignore IP alias rules on the second server"
+msgstr "在第二服务器上忽略 IP 别名规则"
+
+msgid "IPset used by the second server"
+msgstr "第二服务器使用的 IPset"
+
+msgid "NFTset used by the second server"
+msgstr "第二服务器使用的 NFTset"
+
+msgid "Additional flags of the second server"
+msgstr "第二服务器的附加标识"
+
+msgid "DNS64 Prefix"
+msgstr "DNS64 前缀"
+
+msgid "IPv6 prefix used for DNS64, e.g. 64:ff9b::/96"
+msgstr "DNS64 使用的 IPv6 前缀，例如 64:ff9b::/96"
+
+msgid "Enable auto update"
+msgstr "启用自动更新"
+
+msgid "Download the configured files periodically"
+msgstr "定期下载配置的文件"
+
+msgid "Update Week Day"
+msgstr "更新星期"
+
+msgid "Day of the week of the automatic update"
+msgstr "自动更新的星期"
+
+msgid "Update Hour"
+msgstr "更新时刻"
+
+msgid "Hour of the automatic update"
+msgstr "自动更新的小时"
+
+msgid "Proxy used to download files, e.g. socks5://127.0.0.1:1080"
+msgstr "用于下载文件的代理，例如 socks5://127.0.0.1:1080"
+
+msgid "Write a coredump on crashes"
+msgstr "崩溃时写入 coredump"
+
+msgid "Maximum size of a log file, e.g. 64K"
+msgstr "单个日志文件的最大大小，例如 64K"
+
+msgid "Number of rotated log files"
+msgstr "轮转日志文件的数量"
+
+msgid "Path of the log file"
+msgstr "日志文件路径"
+
+msgid "Log every query"
+msgstr "记录每次查询"
+
+msgid "Maximum size of an audit log file"
+msgstr "单个审计日志文件的最大大小"
+
+msgid "Number of rotated audit log files"
+msgstr "轮转审计日志文件的数量"
+
+msgid "Path of the audit log file"
+msgstr "审计日志文件路径"
+
+msgid "Enable this server"
+msgstr "启用此服务器"
+
+msgid "Display name of this server"
+msgstr "此服务器的显示名称"
+
+msgid "Server address, e.g. 8.8.8.8 or tls://dns.example.com"
+msgstr "服务器地址，例如 8.8.8.8 或 tls://dns.example.com"
+
+msgid "Port of the server"
+msgstr "服务器端口"
+
+msgid "Group this server belongs to"
+msgstr "此服务器所属的服务器组"
+
+msgid "Do not use this server for the default group"
+msgstr "默认组不使用此服务器"
+
+msgid "Comma separated list of addresses to filter out"
+msgstr "要过滤的地址列表，以逗号分隔"
+
+msgid "Verify EDNS support of this server"
+msgstr "验证此服务器是否支持 EDNS"
+
+msgid "TLS Host Verify"
+msgstr "TLS 主机名校验"
+
+msgid "Verify the host name of the TLS certificate"
+msgstr "校验 TLS 证书的主机名"
+
+msgid "No Check Certificate"
+msgstr "不校验证书"
+
+msgid "Accept any TLS certificate"
+msgstr "接受任意 TLS 证书"
+
+msgid "TLS server name indication"
+msgstr "TLS 服务器名称指示"
+
+msgid "HTTP host header used for DoH queries"
+msgstr "DoH 查询使用的 HTTP 主机头"
+
+msgid "Expected SPKI hash of the TLS certificate"
+msgstr "TLS 证书预期的 SPKI 哈希"
+
+msgid "SO_MARK value for outgoing queries"
+msgstr "出站查询使用的 SO_MARK 值"
+
+msgid "Send queries through the configured proxy"
+msgstr "通过已配置的代理发送查询"
+
+msgid "Use this server as a fallback only"
+msgstr "仅将此服务器用作备用"
+
+msgid "Additional arguments passed to the server"
+msgstr "传递给服务器的附加参数"
+
+msgid "Enable this rule"
+msgstr "启用此规则"
+
+msgid "Rule Name"
+msgstr "规则名称"
+
+msgid "Display name of this rule"
+msgstr "此规则的显示名称"
+
+msgid "Client addresses, CIDRs or MAC addresses, one per line"
+msgstr "客户端地址、CIDR 或 MAC 地址，每行一个"
+
+msgid "Path of a file containing client addresses"
+msgstr "包含客户端地址的文件路径"
+
+msgid "Server group used for matching clients"
+msgstr "匹配客户端使用的服务器组"
+
+msgid "Speed check mode for matching clients"
+msgstr "匹配客户端的测速模式"
+
+msgid "IPset used for matching clients"
+msgstr "匹配客户端使用的 IPset"
+
+msgid "NFTset used for matching clients"
+msgstr "匹配客户端使用的 NFTset"
+
+msgid "Domain Block List File"
+msgstr "域名屏蔽列表文件"
+
+msgid "Path of a domain block list"
+msgstr "域名屏蔽列表路径"
+
+msgid "Server group used for matching domains"
+msgstr "匹配域名使用的服务器组"
+
+msgid "Path of a domain list file"
+msgstr "域名列表文件路径"
+
+msgid "Block Domain Type"
+msgstr "屏蔽域名类型"
+
+msgid "All"
+msgstr "全部"
+
+msgid "Speed check mode for matching domains"
+msgstr "匹配域名的测速模式"
+
+msgid "IPset used for matching domains"
+msgstr "匹配域名使用的 IPset"
+
+msgid "NFTset used for matching domains"
+msgstr "匹配域名使用的 NFTset"
+
+msgid "Additional smartdns flags for matching domains"
+msgstr "匹配域名的附加 SmartDNS 标识"
+
+msgid "Forwarding Domain Set File"
+msgstr "转发域名列表文件"
+
+msgid "Path of a domain forwarding list"
+msgstr "域名转发列表路径"
+
+msgid "Path of an IP set file"
+msgstr "IP 集合文件路径"
+
+msgid "IP Address"
+msgstr "IP 地址"
+
+msgid "IP addresses or CIDRs, one per line"
+msgstr "IP 地址或 CIDR，每行一个"
+
+msgid "Comma separated list of whitelisted addresses"
+msgstr "白名单地址列表，以逗号分隔"
+
+msgid "Comma separated list of blacklisted addresses"
+msgstr "黑名单地址列表，以逗号分隔"
+
+msgid "Comma separated list of ignored addresses"
+msgstr "忽略的地址列表，以逗号分隔"
+
+msgid "Bogus NXDOMAIN"
+msgstr "伪造 NXDOMAIN"
+
+msgid "Treat matching addresses as non-existent"
+msgstr "将匹配的地址视为不存在"
+
+msgid "IP Alias"
+msgstr "IP 别名"
+
+msgid "Addresses returned instead, one per line"
+msgstr "取而代之返回的地址，每行一个"
+
+msgid "Additional smartdns flags for matching addresses"
+msgstr "匹配地址的附加 SmartDNS 标识"
+
+msgid "Download this file"
+msgstr "下载此文件"
+
+msgid "Name of the downloaded file"
+msgstr "下载文件的名称"
+
+msgid "Download URL"
+msgstr "下载地址"
+
+msgid "URL of the file"
+msgstr "文件 URL"
+
+msgid "Description of the file"
+msgstr "文件的描述"
+
+msgid "Download this file through the configured proxy"
+msgstr "通过已配置的代理下载此文件"
+
+msgid "SmartDNS is a local DNS server which performs speed checks on DNS results and returns the fastest address."
+msgstr "SmartDNS 是本地 DNS 服务器，会对 DNS 结果测速并返回最快的地址。"
+
+msgid "DNS Server Settings"
+msgstr "DNS 服务器设置"
+
+msgid "The file is stored under /etc/smartdns/conf.d"
+msgstr "文件保存在 /etc/smartdns/conf.d 下"
+
+msgid "The file is stored under /etc/smartdns/domain-set"
+msgstr "文件保存在 /etc/smartdns/domain-set 下"
+
+msgid "Upload Other File"
+msgstr "上传其他文件"
+
+msgid "The file is stored under /etc/smartdns/download"
+msgstr "文件保存在 /etc/smartdns/download 下"
+
+msgid "Add download file"
+msgstr "添加下载文件"
+
+msgid "Custom Configuration"
+msgstr "自定义配置"
+
+msgid "Contents are written to /etc/smartdns/custom.conf"
+msgstr "内容写入 /etc/smartdns/custom.conf"
+
+msgid "Domain Forwarding List"
+msgstr "域名转发列表"
+
+msgid "Domains listed here are forwarded to the configured server group"
+msgstr "此处列出的域名将转发至已配置的服务器组"
+
+msgid "Add DNS server"
+msgstr "添加 DNS 服务器"
+
+msgid "Add client rule"
+msgstr "添加客户端规则"
+
+msgid "Add domain rule"
+msgstr "添加域名规则"
+
+msgid "Domain Block List"
+msgstr "域名屏蔽列表"
+
+msgid "Domains listed here are blocked"
+msgstr "此处列出的域名将被屏蔽"
+
+msgid "Contents are written to /etc/smartdns/address.conf"
+msgstr "内容写入 /etc/smartdns/address.conf"
+
+msgid "Add IP rule"
+msgstr "添加 IP 规则"
+
+msgid "Contents are written to /etc/smartdns/blacklist-ip.conf"
+msgstr "内容写入 /etc/smartdns/blacklist-ip.conf"
+
+msgid "%s is required."
+msgstr "%s 为必填项。"
+
+msgid "%s is invalid."
+msgstr "%s 无效。"
+msgid "Invalid tab"
+msgstr "无效的标签页"
+
+msgid "File upload failed."
+msgstr "文件上传失败。"
+
+msgid "Failed to save the configuration."
+msgstr "保存配置失败。"
+

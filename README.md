@@ -1,6 +1,6 @@
 # smartdns-openwrt
 
-面向 **OpenWrt 21.02** 分支的 smartdns 打包仓库，包含 smartdns 服务端、Web 面板及 LuCI 应用。
+面向 **OpenWrt 21.02** 分支与 **ucode** 分支（LuCI 24.10 / 25.12 / main）的 smartdns 打包仓库，包含 smartdns 服务端、Web 面板及 LuCI 应用。
 服务端、Web 面板、LuCI 页面拆分为独立软件包，可分别安装、升级；完整版与精简版 LuCI 页面共用同一个 `smartdns` 服务端。
 
 ## 包结构
@@ -10,10 +10,10 @@
 | `smartdns` | `/usr/sbin/smartdns`、完整版 init 脚本、`/etc/config/smartdns`、`/etc/smartdns/` 默认配置与示例 | `libc`、`libpthread`、`zlib`；系统 OpenSSL < 3.3 时加 `smartdns-openssl`，≥ 3.3 时加 `libopenssl` |
 | `smartdns-openssl` | OpenSSL 3 运行库：`/usr/lib/smartdns/libssl.so.3`、`libcrypto.so.3`（隐藏包，系统 OpenSSL < 3.3 时安装） | `libc` |
 | `WebUI` | Web 面板：`/usr/lib/smartdns_ui.so` 与 `/usr/share/smartdns/wwwroot` | `smartdns` |
-| `luci-app-smartdns` | 完整版 LuCI 页面（JS、中文翻译、菜单、ACL） | `smartdns`，可选 `WebUI` |
-| `luci-app-smartdns-lite` | 精简版 LuCI 页面（JS、中文翻译、菜单、ACL），以及自身的 `/etc/config/smartdns-lite`、`/etc/init.d/smartdns-lite` | `smartdns` |
+| `luci-app-smartdns` | 完整版 LuCI 页面（ucode 控制器、中文翻译、菜单、ACL） | `smartdns`，可选 `WebUI` |
+| `luci-app-smartdns-lite` | 精简版 LuCI 页面（ucode 控制器、中文翻译、菜单、ACL），以及自身的 `/etc/config/smartdns-lite`、`/etc/init.d/smartdns-lite` | `smartdns` |
 
-init 脚本、`/etc/config/smartdns`、`/etc/smartdns/` 数据文件由 `smartdns` 统一安装；两个 LuCI 页面只包含页面资源（JS、翻译、菜单、ACL）与各自的 UCI 配置，避免升级时出现文件所有权冲突。
+init 脚本、`/etc/config/smartdns`、`/etc/smartdns/` 数据文件由 `smartdns` 统一安装；两个 LuCI 页面只包含页面资源（ucode 控制器、翻译、菜单、ACL）与各自的 UCI 配置，避免升级时出现文件所有权冲突。
 
 安装 `luci-app-smartdns` 时，`Include WebUI` 选项（`PACKAGE_luci-app-smartdns_INCLUDE_WebUI`，**默认关闭**）决定是否一并安装面板。
 默认只安装 DNS 服务端；需要面板时，在 menuconfig 中勾选该子选项，或在 `.config` 中写入 `CONFIG_PACKAGE_luci-app-smartdns_INCLUDE_WebUI=y`（等价于直接选中 `CONFIG_PACKAGE_smartdns-ui=y`）。
@@ -81,10 +81,11 @@ init 脚本、`/etc/config/smartdns`、`/etc/smartdns/` 数据文件由 `smartdn
 - 两个页面共用 `smartdns` 服务端与 `/etc/smartdns/custom.conf`（自定义配置页），缓存文件也默认位于 `/etc/smartdns/`；同一时刻只应启用其中一个页面，否则会重复接管 dnsmasq 或争抢端口。
 - `/etc/init.d/smartdns-lite stop` 只停止服务，不会撤销已登记的 `conf_files`；如需完全停用，请关闭 `enabled` 并保存。
 
-## 兼容性（OpenWrt 21.02）
+## 兼容性（LuCI 24.10 / 25.12 / main）
 
-- **LuCI 接口**：已对照 `openwrt/luci` 的 `openwrt-21.02` 分支逐项确认，页面使用的 `poll`（内置类与 `poll.add`）、`fs.stat/fs.trimmed/fs.exec`、`uci.get_first/unload/sections`、`ui.createHandlerFn`、`L.resolveDefault`、`form.Value`（含 `value()` 预设）、`form.FileUpload`（`root_directory`/`editable`）、`form.SectionValue`、`form.GridSection`、`form.DynamicList`、`form.TextValue`、`validation` 的 `port`/`uinteger`/`ipaddr`/`or()` 均可用，无需 ucode 或 23.05+ 才有的接口。
-- **前端语法**：页面使用 ES2020（可选链 `?.`、空值合并 `??`、`replaceChildren`、`String.prototype.includes`、`startsWith`），在 21.02 的 LuCI 中不做转译。请使用 Chrome/Edge 80+、Firefox 74+、Safari 13.1+；不支持 IE（按设计不再兼容旧标准）。
+- **页面实现**：两个 LuCI 页面都是服务端 ucode 控制器，源码位于 `luci-app-smartdns/ucode/` 与 `luci-app-smartdns-lite/ucode/`（模块 `luci.model.smartdns.*`、`luci.model.smartdns_lite.*` 与 `luci.controller.smartdns`、`luci.controller.smartdns-lite`），由 `luci.mk` 安装到 `/usr/share/ucode/luci`；`htdocs/luci-static/resources/view` 下的客户端 JS 视图已删除，页面不再在浏览器端运行 CBI。
+- **LuCI 接口**：已对照 `openwrt/luci` 的 `openwrt-24.10`、`openwrt-25.12` 与 `master` 三个分支确认：菜单动作 `type: "function"`、`require()` 加载 `luci.controller.*`、`ctx.authtoken` 表单令牌校验、`uci`/`ubus`/`fs`/`http` 模块，以及 `luci.mk` 的 `UCODE_LIBRARYDIR` 安装规则与 `Build/Prepare` 目录列表在三个分支中行为一致；所需 `ucode`、`ucode-mod-fs`、`ucode-mod-uci`、`ucode-mod-ubus` 由 `luci-base` 的依赖提供。
+- **表单与提交流程**：每个表单都带隐藏的 `token` 字段并由服务端再次校验；保存时通过 `uci` 提交配置并调用 `/etc/init.d/<服务> reload`，重启服务、更新数据文件为独立按钮。
 - **Shell**：两个 init 脚本均为 POSIX sh（busybox ash），无 bash 语法；依赖 `iptables`/`ip6tables`，精简版的 TPROXY 规则在存在 `nft` 时优先使用 nftables，`ipset` 仅在使用 ipset 规则时需要；下载列表功能依赖 `wget`（HTTPS 链接需带 libustream 的 busybox wget 或 wget-ssl）。
 - **构建**：`rules.mk` 强制使用 bash，Makefile 中的花括号展开安全；完整版 init 以 `INSTALL_BIN` 安装，精简版 init 通过 `PKG_FILE_MODES` 指定权限，均为 0755，不依赖仓库检出时的文件权限位。
 
@@ -118,7 +119,7 @@ init 脚本、`/etc/config/smartdns`、`/etc/smartdns/` 数据文件由 `smartdn
 ## 构建
 
 ```sh
-# 在 OpenWrt 21.02 源码树中
+# 在 OpenWrt 源码树中（24.10 / 25.12 / main 使用本 ucode 分支）
 ln -s /path/to/smartdns-openwrt/smartdns feeds/package/smartdns
 ln -s /path/to/smartdns-openwrt/luci-app-smartdns feeds/luci/applications/luci-app-smartdns
 ln -s /path/to/smartdns-openwrt/luci-app-smartdns-lite feeds/luci/applications/luci-app-smartdns-lite

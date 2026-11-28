@@ -72,6 +72,7 @@ define Package/smartdns/conffiles
 /etc/smartdns/custom.conf
 /etc/smartdns/domain-block.list
 /etc/smartdns/domain-forwarding.list
+/etc/smartdns/smartdns.conf
 endef
 
 define Package/smartdns-ui

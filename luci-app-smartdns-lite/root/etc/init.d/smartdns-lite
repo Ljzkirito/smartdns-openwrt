@@ -269,12 +269,14 @@ load_service()
 		return
 	fi
 
-	config_get port "$section" "port" "53"
+	config_get port "$section" "port" "6053"
 	config_get server_mode "$section" "server_mode" "main"
 
 	[ "$server_mode" = "main" ] && port="53"
 
-	[ "$server_mode" = "dnsmasq_upstream" ] && auto_set_dnsmasq="1"
+	case "$server_mode" in
+		main|dnsmasq_upstream) auto_set_dnsmasq="1" ;;
+	esac
 
 	config_get speed_check_mode "$section" "speed_check_mode" ""
 	[ -z "$speed_check_mode" ] || conf_append "speed-check-mode" "$speed_check_mode"

@@ -830,7 +830,7 @@ load_service()
 	config_get old_enabled "$section" "old_enabled" "0"
 	config_get old_auto_set_dnsmasq "$section" "old_auto_set_dnsmasq" "0"
 
-	[ -z "$qtype_soa_list" ] || conf_append "force-qtype-SOA" "$qtype_soa_list"
+	[ -z "$qtype_soa_list" ] || conf_append "force-qtype-SOA" "${qtype_soa_list# }"
 	[ -e "$resolve_file" ] && conf_append "resolv-file" "$resolve_file"
 
 	# upgrade old configuration

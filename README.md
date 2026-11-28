@@ -29,7 +29,8 @@ UCI 配置、init 脚本与数据目录分别由两个 LuCI 应用携带，互�
 - 必须先安装 `smartdns` 服务端包（本包依赖已声明），但无需启用 `smartdns` 服务；
 - 页面状态栏展示的是 `smartdns-lite` 实例的运行状态；
 - `Main DNS` 模式会接管 dnsmasq（关闭 dnsmasq 的 53 端口并下发 DHCP DNS），`Dnsmasq Upstream` 模式则把 dnsmasq 的上游指向本实例；
-- 关闭 `enabled` 或停止服务时，会撤销对 dnsmasq 的修改并清理 TPROXY 规则。
+- 关闭 `enabled` 或停止服务时，会撤销对 dnsmasq 的修改并清理 TPROXY 规则；
+- 基础设置页还提供测速模式、响应模式、双栈 IP 优选、域名预加载、缓存过期服务、缓存大小、持久化缓存/缓存文件、解析本地主机名、mDNS 查询、Force AAAA/HTTPS SOA 与域名 TTL，生成逻辑与完整版对应选项一致，未填写的选项沿用 smartdns 默认值。
 
 ## 为什么使用预构建二进制
 

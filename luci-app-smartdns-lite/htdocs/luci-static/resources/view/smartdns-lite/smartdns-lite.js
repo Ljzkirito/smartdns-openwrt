@@ -190,6 +190,132 @@ return view.extend({
 		o.depends('server_mode', 'upstream');
 		o.depends('server_mode', 'dnsmasq_upstream');
 
+		////////////////
+		// Resolver and cache;
+		////////////////
+		o = s.taboption('settings', form.Value, 'speed_check_mode', _('Speed Check Mode'),
+			_('Smartdns speed check mode.'));
+		o.rmempty = true;
+		o.placeholder = 'default';
+		o.value('', _('default'));
+		o.value('ping,tcp:80,tcp:443');
+		o.value('ping,tcp:443,tcp:80');
+		o.value('tcp:80,tcp:443,ping');
+		o.value('tcp:443,tcp:80,ping');
+		o.value('tcp-syn:80,tcp-syn:443,ping');
+		o.value('tcp-syn:443,tcp-syn:80,ping');
+		o.value('none', _('None'));
+		o.validate = function (section_id, value) {
+			if (value === '')
+				return true;
+
+			if (value === 'none')
+				return true;
+
+			const check_mode = value.split(',');
+
+			for (const cm of check_mode) {
+				if (cm === 'ping')
+					continue;
+
+				if (cm.startsWith('tcp:')) {
+					const tcp_port = cm.split(':')[1];
+
+					if (tcp_port === '')
+						return _('TCP port is empty');
+
+					continue;
+				}
+
+				if (cm.startsWith('tcp-syn:')) {
+					const syn_port = cm.split(':')[1];
+
+					if (syn_port === '')
+						return _('TCP SYN port is empty');
+
+					continue;
+				}
+
+				return _('Speed check mode is invalid.');
+			}
+
+			return true;
+		};
+
+		o = s.taboption('settings', form.ListValue, 'response_mode', _('Response Mode'),
+			_('Smartdns response mode, First Ping: return the first ping IP, Fastest IP: return the fastest IP, Fastest Response: return the fastest DNS response.'));
+		o.rmempty = true;
+		o.placeholder = 'default';
+		o.value('', _('default'));
+		o.value('first-ping', _('First Ping'));
+		o.value('fastest-ip', _('Fastest IP'));
+		o.value('fastest-response', _('Fastest Response'));
+
+		o = s.taboption('settings', form.Flag, 'dualstack_ip_selection', _('Dual-stack IP Selection'),
+			_('Enable IP selection between IPv4 and IPv6'));
+		o.rmempty = false;
+		o.default = o.enabled;
+
+		o = s.taboption('settings', form.Flag, 'prefetch_domain', _('Domain prefetch'),
+			_('Enable domain prefetch, accelerate domain response speed.'));
+		o.rmempty = true;
+		o.default = o.disabled;
+
+		o = s.taboption('settings', form.Flag, 'serve_expired', _('Serve expired'),
+			_('Attempts to serve old responses from cache with a TTL of 0 in the response without waiting for the actual resolution to finish.'));
+		o.rmempty = false;
+		o.default = o.enabled;
+
+		o = s.taboption('settings', form.Value, 'cache_size', _('Cache Size'),
+			_('DNS domain result cache size'));
+		o.rmempty = true;
+
+		o = s.taboption('settings', form.Flag, 'cache_persist', _('Cache Persist'),
+			_('Write cache to disk on exit and load on startup.'));
+		o.rmempty = false;
+		o.default = o.enabled;
+
+		o = s.taboption('settings', form.Value, 'cache_file', _('Cache File'),
+			_('Cache persist file path, used when cache persist is enabled.'));
+		o.placeholder = '/etc/smartdns-lite/smartdns.cache';
+		o.datatype = 'string';
+		o.rmempty = true;
+		o.depends('cache_persist', '1');
+
+		o = s.taboption('settings', form.Flag, 'resolve_local_hostnames', _('Resolve Local Hostnames'),
+			_('Resolve local hostnames by reading Dnsmasq or odhcpd lease files.'));
+		o.rmempty = false;
+		o.default = o.enabled;
+
+		o = s.taboption('settings', form.Flag, 'mdns_lookup', _('mDNS Lookup'),
+			_('Resolve local network hostname via mDNS protocol.'));
+		o.rmempty = true;
+		o.default = o.disabled;
+
+		o = s.taboption('settings', form.Flag, 'force_aaaa_soa', _('Force AAAA SOA'),
+			_('Force AAAA SOA.'));
+		o.rmempty = true;
+		o.default = o.disabled;
+
+		o = s.taboption('settings', form.Flag, 'force_https_soa', _('Force HTTPS SOA'),
+			_('Force HTTPS SOA.'));
+		o.rmempty = false;
+		o.default = o.enabled;
+
+		o = s.taboption('settings', form.Value, 'rr_ttl', _('Domain TTL'),
+			_('TTL for all domain result.'));
+		o.rmempty = true;
+
+		o = s.taboption('settings', form.Value, 'rr_ttl_min', _('Domain TTL Min'),
+			_('Minimum TTL for all domain result.'));
+		o.rmempty = true;
+		o.placeholder = '600';
+		o.default = 600;
+
+		o = s.taboption('settings', form.Value, 'rr_ttl_max', _('Domain TTL Max'),
+			_('Maximum TTL for all domain result.'));
+		o.rmempty = true;
+
 		///////////////////////////////////////
 		// Parental Control Settings
 		///////////////////////////////////////

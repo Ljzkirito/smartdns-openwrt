@@ -1,3 +1,10 @@
 config smartdns-lite
 	option enabled '0'
 	option server_mode 'main'
+	option speed_check_mode 'tcp-syn:443,tcp-syn:80,ping'
+	option response_mode 'first-ping'
+	option prefetch_domain '1'
+	option cache_size '8000'
+	option mdns_lookup '1'
+	list servers 'h3://dns.alidns.com/dns-query'
+	list servers 'https://doh.pub/dns-query'

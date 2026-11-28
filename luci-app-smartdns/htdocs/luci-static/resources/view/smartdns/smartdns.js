@@ -194,6 +194,7 @@ return view.extend({
 		o = s.taboption("advanced", form.Value, "speed_check_mode", _("Speed Check Mode"), _("Smartdns speed check mode."));
 		o.rmempty = true;
 		o.placeholder = "default";
+		o.default = "tcp-syn:443,tcp-syn:80,ping";
 		o.value("", _("default"));
 		o.value("ping,tcp:80,tcp:443");
 		o.value("ping,tcp:443,tcp:80");
@@ -246,6 +247,7 @@ return view.extend({
 			_("Smartdns response mode, First Ping: return the first ping IP, Fastest IP: return the fastest IP, Fastest Response: return the fastest DNS response."));
 		o.rmempty = true;
 		o.placeholder = "default";
+		o.default = "first-ping";
 		o.value("", _("default"));
 		o.value("first-ping", _("First Ping"));
 		o.value("fastest-ip", _("Fastest IP"));
@@ -360,7 +362,7 @@ return view.extend({
 		o = s.taboption("advanced", form.Flag, "prefetch_domain", _("Domain prefetch"),
 			_("Enable domain prefetch, accelerate domain response speed."));
 		o.rmempty = true;
-		o.default = o.disabled;
+		o.default = o.enabled;
 
 		// Domain Serve expired
 		o = s.taboption("advanced", form.Flag, "serve_expired", _("Serve expired"),
@@ -371,6 +373,8 @@ return view.extend({
 		// cache-size;
 		o = s.taboption("advanced", form.Value, "cache_size", _("Cache Size"), _("DNS domain result cache size"));
 		o.rmempty = true;
+		o.placeholder = "8000";
+		o.default = 8000;
 
 		// cache-persist;
 		o = s.taboption("advanced", form.Flag, "cache_persist", _("Cache Persist"), _("Write cache to disk on exit and load on startup."));
@@ -393,7 +397,7 @@ return view.extend({
 		// resolve local network hostname via mDNS;
 		o = s.taboption("advanced", form.Flag, "mdns_lookup", _("mDNS Lookup"), _("Resolve local network hostname via mDNS protocol."));
 		o.rmempty = true;
-		o.default = o.disabled;
+		o.default = o.enabled;
 
 		// ddns domain;
 		o = s.taboption("advanced", form.Value, "ddns_domain", _("DDNS Domain"),

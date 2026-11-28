@@ -30,8 +30,25 @@ UCI 配置、init 脚本与数据目录分别由两个 LuCI 应用携带，互�
 - 页面状态栏展示的是 `smartdns-lite` 实例的运行状态；
 - `Main DNS` 模式会接管 dnsmasq（关闭 dnsmasq 的 53 端口并下发 DHCP DNS），`Dnsmasq Upstream` 模式则把 dnsmasq 的上游指向本实例；
 - 关闭 `enabled` 或停止服务时，会撤销对 dnsmasq 的修改并清理 TPROXY 规则；
-- 基础设置页还提供测速模式、响应模式、双栈 IP 优选、域名预加载、缓存过期服务、缓存大小、持久化缓存/缓存文件、解析本地主机名、mDNS 查询、Force AAAA/HTTPS SOA 与域名 TTL，生成逻辑与完整版对应选项一致，未填写的选项沿用 smartdns 默认值；
+- 基础设置页还提供测速模式、响应模式、双栈 IP 优选、域名预加载、缓存过期服务、缓存大小、持久化缓存/缓存文件、解析本地主机名、mDNS 查询、Force AAAA/HTTPS SOA 与域名 TTL，生成逻辑与默认值均与完整版对应选项一致；
 - 安装 `smartdns-ui`（WebUI）后，可在基础设置页启用 WebUI 并设置端口、数据库目录与日志保存天数，生成的 `plugin smartdns_ui.so` 等指令由 `smartdns-lite` 实例加载，运行状态旁会显示“打开 WebUI”按钮。
+
+## 默认配置
+
+两个应用首次生成配置时采用相同的默认值：
+
+- 测速模式：`tcp-syn:443,tcp-syn:80,ping`
+- 响应模式：`first-ping`（最快 Ping）
+- 域名预加载、缓存过期服务、持久化缓存、解析本地主机名、mDNS 查询：开启
+- 缓存大小：`8000`
+- 双栈 IP 优选：开启；Force HTTPS SOA：开启；Force AAAA SOA：关闭
+- 默认上游服务器（完整版为 4 个 server 段；精简版中 Alidns/DNSPod 写入 `servers` 列表，两条 Bootstrap 写入 `/etc/smartdns-lite/custom.conf`，因为 smartdns 的 UDP 服务器只接受纯 IP 写法，无法通过页面“必须带协议前缀”的校验）：
+  1. Alidns：`h3://dns.alidns.com/dns-query`（h3）
+  2. DNSPod：`https://doh.pub/dns-query`（https）
+  3. Bootstrap DNS：`223.5.5.5`（udp，附加参数 `-bootstrap-dns`）
+  4. Bootstrap DNS：`119.29.29.29`（udp，附加参数 `-bootstrap-dns`）
+
+完整版在 `/etc/config/smartdns` 中以 `config server` 段提供；精简版在 `/etc/config/smartdns-lite` 中以 `list servers` 提供，服务器地址后可跟 `-bootstrap-dns` 等 smartdns 服务器参数。
 
 ## 为什么使用预构建二进制
 

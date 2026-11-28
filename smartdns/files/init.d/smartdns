@@ -37,126 +37,7 @@ EXTRA_HELP="        updatefiles      Update files"
 COREDUMP="0"
 RESPAWN="1"
 DO_RELOAD="0"
-DNSMASQ_RESTART="0"
-
-restart_dnsmasq()
-{
-	local defer="$1"
-
-	if [ "$defer" = "1" ]; then
-		DNSMASQ_RESTART="1"
-		return
-	fi
-
-	/etc/init.d/dnsmasq restart
-}
-
-restart_pending_dnsmasq()
-{
-	[ "$DNSMASQ_RESTART" = "1" ] || return
-	DNSMASQ_RESTART="0"
-	/etc/init.d/dnsmasq restart
-}
-
-set_forward_dnsmasq()
-{
-	local PORT="$1"
-	local defer_restart="$2"
-	addr="127.0.0.1#$PORT"
-	# space in suffix is important
-	OLD_SERVER="$(uci -q get dhcp.@dnsmasq[0].server) "
-	if echo "$OLD_SERVER" | grep "^$addr " >/dev/null 2>&1; then
-		return
-	fi
-
-	uci_batch=""
-	uci_batch="$uci_batch delete dhcp.@dnsmasq[0].server\n"
-	uci_batch="$uci_batch add_list dhcp.@dnsmasq[0].server=\"$addr\"\n"
-	uci_batch="$uci_batch set dhcp.@dnsmasq[0].noresolv=1\n"
-	uci_batch="$uci_batch set dhcp.@dnsmasq[0].rebind_protection=0\n"
-	uci_batch="$uci_batch set dhcp.@dnsmasq[0].domainneeded=0\n"
-	echo -e "$uci_batch" | uci batch -q -
-	uci commit dhcp
-	restart_dnsmasq "$defer_restart"
-}
-
-stop_forward_dnsmasq()
-{
-	local OLD_PORT="$1"
-	local norestart="$2"
-	local defer_restart="$3"
-	addr="127.0.0.1#$OLD_PORT"
-	OLD_SERVER="$(uci -q get dhcp.@dnsmasq[0].server) "
-	if ! echo "$OLD_SERVER" | grep "^$addr " >/dev/null 2>&1; then
-		return
-	fi
-	
-	uci_batch=""
-	uci_batch="$uci_batch delete dhcp.@dnsmasq[0].server\n"
-	uci_batch="$uci_batch delete dhcp.@dnsmasq[0].noresolv\n"
-	uci_batch="$uci_batch set dhcp.@dnsmasq[0].rebind_protection=1\n"
-	uci_batch="$uci_batch set dhcp.@dnsmasq[0].domainneeded=1\n"
-	echo -e "$uci_batch" | uci batch -q -
-	uci commit dhcp
-	[ "$norestart" != "1" ] && restart_dnsmasq "$defer_restart"
-}
-
-set_main_dns()
-{
-	local hostip
-	hostip="$(uci -q get network.lan.ipaddr | sed 's/\/.*//g')"
-	dnsmasq_port="$(uci -q get dhcp.@dnsmasq[0].port)"
-	[ -z "$dnsmasq_port" ] && dnsmasq_port="53"
-	
-	[ -z "$hostip" ] && return
-
-	uci_batch=""
-	[ "$dnsmasq_port" = "53" ] && {
-		uci_batch="$uci_batch set dhcp.@dnsmasq[0].port=0\n"
-		# add_list is not idempotent -- this function runs on every
-		# service start/restart/reload (not just once at install), so
-		# unconditionally add_list-ing here appended another duplicate
-		# "6,$hostip" to dhcp.lan.dhcp_option every single time.
-		if ! uci -q get dhcp.lan.dhcp_option 2>/dev/null | tr ' ' '\n' | grep -Fqx "6,$hostip"; then
-			uci_batch="$uci_batch add_list dhcp.lan.dhcp_option=\"6,$hostip\"\n"
-		fi
-	}
-
-	# for some third-party firmware
-	redir_dns="$(uci -q get dhcp.@dnsmasq[0].dns_redirect)"
-	[ "$redir_dns" = "1" ] && {
-		uci_batch="$uci_batch set dhcp.@dnsmasq[0].dns_redirect=0\n"
-		uci_batch="$uci_batch set dhcp.@dnsmasq[0].old_dns_redirect=1\n"
-	}
-
-	if [ -z "$uci_batch" ]; then
-		return
-	fi
-
-	echo -e "$uci_batch" | uci batch -q -
-	uci commit dhcp
-	/etc/init.d/dnsmasq restart
-}
-
-stop_main_dns()
-{
-	local norestart="$1"
-	hostip="$(uci -q get network.lan.ipaddr)"
-	dnsmasq_port="$(uci -q get dhcp.@dnsmasq[0].port)"
-	redir_dns="$(uci -q get dhcp.@dnsmasq[0].old_dns_redirect)"
-	[ "$dnsmasq_port" != "0" ] && return
-
-	uci_batch=""
-	[ "$redir_dns" = "1" ] && {
-		uci_batch="$uci_batch set dhcp.@dnsmasq[0].dns_redirect=1\n"
-		uci_batch="$uci_batch delete dhcp.@dnsmasq[0].old_dns_redirect\n"
-	}
-	uci_batch="$uci_batch delete dhcp.@dnsmasq[0].port\n"
-	uci_batch="$uci_batch del_list dhcp.lan.dhcp_option=\"6,$hostip\"\n"
-	echo -e "$uci_batch" | uci batch -q -
-	uci commit dhcp
-	[ "$norestart" != "1" ] && /etc/init.d/dnsmasq restart
-}
+. /lib/functions/smartdns.sh
 
 clear_iptable()
 {
@@ -186,11 +67,6 @@ clear_iptable()
 service_triggers() {
 	procd_add_reload_trigger firewall
 	procd_add_reload_trigger smartdns
-}
-
-conf_append()
-{
-	echo "$1 $2" >> $SMARTDNS_CONF_TMP
 }
 
 get_tz()
@@ -371,11 +247,6 @@ load_domain_rules()
 	[ ! -e "$SMARTDNS_DEFAULT_DOMAIN_BLOCK_FILE" ] && touch $SMARTDNS_DEFAULT_DOMAIN_BLOCK_FILE
 	conf_append "domain-set" "-name ${domain_set_name}-block-list -file $SMARTDNS_DEFAULT_DOMAIN_BLOCK_FILE"
 	conf_append "domain-rules" "/domain-set:${domain_set_name}-block-list/ -address #"
-}
-
-client_rule_addr_append()
-{
-	conf_append "client-rules" "$1"
 }
 
 load_client_rules()

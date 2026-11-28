@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=smartdns
 PKG_VERSION:=48.5.4
-PKG_RELEASE:=6
+PKG_RELEASE:=7
 
 ifeq ($(ARCH),aarch64)
   PKG_ARCH:=aarch64
@@ -33,6 +33,10 @@ PKG_LICENSE:=GPL-3.0-or-later
 PKG_LICENSE_FILES:=LICENSE
 
 include $(INCLUDE_DIR)/package.mk
+
+# Both init scripts travel with the binary so that either LuCI frontend can
+# drive the same smartdns executable; the apps only ship their UCI config.
+PKG_FILE_MODES:=/etc/init.d/smartdns:root:root:0755 /etc/init.d/smartdns-lite:root:root:0755
 
 TAR_CMD:=$(HOST_TAR) -C $(PKG_BUILD_DIR) $(TAR_OPTIONS)
 
@@ -95,9 +99,62 @@ endef
 define Build/Compile
 endef
 
+define Package/smartdns/postinst
+#!/bin/sh
+[ -n "$${IPKG_INSTROOT}" ] || {
+	# The UCI config is installed by the LuCI apps, so only enable (or
+	# restart) the matching service when its config is present.
+	if [ -f /etc/config/smartdns ]; then
+		/etc/init.d/smartdns enable
+		if [ "$$(uci -q get smartdns.@smartdns[0].enabled)" = "1" ]; then
+			/etc/init.d/smartdns restart
+		fi
+	fi
+	if [ -f /etc/config/smartdns-lite ]; then
+		/etc/init.d/smartdns-lite enable
+		if [ "$$(uci -q get smartdns-lite.@smartdns-lite[0].enabled)" = "1" ]; then
+			/etc/init.d/smartdns-lite restart
+		fi
+	fi
+}
+endef
+
+define Package/smartdns/conffiles
+/etc/smartdns/address.conf
+/etc/smartdns/blacklist-ip.conf
+/etc/smartdns/custom.conf
+/etc/smartdns/domain-block.list
+/etc/smartdns/domain-forwarding.list
+/etc/smartdns/smartdns.conf
+/etc/smartdns-lite/custom.conf
+endef
+
 define Package/smartdns/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/tmp/smartdns-openwrt/root/usr/sbin/smartdns $(1)/usr/sbin/
+
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_BIN) $(CURDIR)/files/init.d/smartdns $(1)/etc/init.d/
+	$(INSTALL_BIN) $(CURDIR)/files/init.d/smartdns-lite $(1)/etc/init.d/
+
+	$(INSTALL_DIR) $(1)/lib/functions
+	$(INSTALL_DATA) $(CURDIR)/files/smartdns.sh $(1)/lib/functions/
+
+	$(INSTALL_DIR) $(1)/etc/smartdns/conf.d
+	$(INSTALL_DIR) $(1)/etc/smartdns/data
+	$(INSTALL_DIR) $(1)/etc/smartdns/domain-set
+	$(INSTALL_DIR) $(1)/etc/smartdns/ip-set
+	$(INSTALL_DIR) $(1)/etc/smartdns/download
+	$(INSTALL_CONF) $(CURDIR)/files/smartdns/smartdns.conf $(1)/etc/smartdns/
+	$(INSTALL_CONF) $(CURDIR)/files/smartdns/address.conf $(1)/etc/smartdns/
+	$(INSTALL_CONF) $(CURDIR)/files/smartdns/blacklist-ip.conf $(1)/etc/smartdns/
+	$(INSTALL_CONF) $(CURDIR)/files/smartdns/domain-block.list $(1)/etc/smartdns/
+	$(INSTALL_CONF) $(CURDIR)/files/smartdns/domain-forwarding.list $(1)/etc/smartdns/
+	$(INSTALL_CONF) $(CURDIR)/files/smartdns/custom.conf $(1)/etc/smartdns/
+
+	$(INSTALL_DIR) $(1)/etc/smartdns-lite/domain-set
+	$(INSTALL_DIR) $(1)/etc/smartdns-lite/ip-set
+	$(INSTALL_CONF) $(CURDIR)/files/smartdns-lite/custom.conf $(1)/etc/smartdns-lite/
 endef
 
 define Package/smartdns-openssl/install

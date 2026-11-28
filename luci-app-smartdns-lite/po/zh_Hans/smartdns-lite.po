@@ -94,8 +94,8 @@ msgid "Upstream Server"
 msgstr "上游服务器"
 
 #: smartdns-lite.js:184
-msgid "Upstream servers, format: [udp://|tcp://|tls://|https://|quic://|h3://][ip]."
-msgstr "上游服务器，格式：[udp://|tcp://|tls://|https://|quic://|h3://][ip]。"
+msgid "Upstream servers, format: [udp://|tcp://|tls://|https://|quic://|h3://][ip] [options]."
+msgstr "上游服务器，格式：[udp://|tcp://|tls://|https://|quic://|h3://][ip] [参数]。"
 
 #: smartdns-lite.js:188
 msgid "AD Block Domain List File"
